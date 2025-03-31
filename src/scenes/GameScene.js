@@ -66,7 +66,7 @@ export default class GameScene extends Phaser.Scene {
         const startX = this.gameArea.x;
         const startY = this.gameArea.y;
         const cellSize = this.gameArea.cellSize;
-        const limeRadius = cellSize * 0.4; // 셀 크기의 40%
+        const limeRadius = cellSize * 0.35; // 라임 크기 약간 축소
 
         for (let row = 0; row < 10; row++) {
             this.limes[row] = [];
@@ -74,13 +74,23 @@ export default class GameScene extends Phaser.Scene {
                 const x = startX + (col * cellSize) + (cellSize / 2);
                 const y = startY + (row * cellSize) + (cellSize / 2);
 
+                // 라임 그래픽 품질 개선
                 const lime = this.add.circle(x, y, limeRadius, 0x32CD32);
+                lime.setStrokeStyle(1, 0x28A228); // 테두리 추가
+
                 const number = Phaser.Math.Between(1, 9);
 
+                // 텍스트 품질 개선
                 const text = this.add.text(x, y, number.toString(), {
-                    fontSize: `${limeRadius}px`,
-                    color: '#ffffff'
+                    fontSize: `${limeRadius * 1.2}px`,
+                    color: '#ffffff',
+                    fontFamily: 'Arial',
+                    fontStyle: 'bold',
+                    resolution: 2 // 텍스트 선명도 향상
                 }).setOrigin(0.5);
+
+                // 그림자 효과 추가
+                text.setShadow(1, 1, 'rgba(0,0,0,0.3)', 2);
 
                 lime.setInteractive();
                 lime.setData({
@@ -91,55 +101,65 @@ export default class GameScene extends Phaser.Scene {
                     isSelected: false
                 });
 
+                // 기본 depth 설정
+                lime.setDepth(1);
+                text.setDepth(2);
+
                 this.limes[row][col] = lime;
             }
         }
     }
 
     createUI() {
-        // 점수 표시
+        // 점수 표시 (게임 영역 안에만 표시)
         this.scoreText = this.add.text(
             this.gameArea.x,
             this.gameArea.y * 0.4,
             'Score: 0',
             {
                 fontSize: `${this.scale.height * 0.04}px`,
-                color: '#000000'
+                color: '#000000',
+                fontFamily: 'Arial',
+                fontStyle: 'bold',
+                resolution: 2
             }
         );
 
         // 타임바 생성
-        const timeBarWidth = this.timerArea.width * 0.4;
-        const timeBarHeight = this.timerArea.height * 0.7;
-        const timeBarX = this.timerArea.x + (this.timerArea.width * 0.3);
-        const timeBarY = this.timerArea.height * 0.85 - timeBarHeight; // 위치를 아래로 이동
+        const timeBarWidth = this.timerArea.width * 0.3; // 타임바 폭 축소
+        const timeBarHeight = this.timerArea.height * 0.6;
+        const timeBarX = this.timerArea.x + (this.timerArea.width * 0.35);
+        const timeBarY = this.timerArea.height * 0.85 - timeBarHeight;
 
-        // 타임바 배경 (회색 배경)
+        // 타임바 배경 개선
         this.add.rectangle(
             timeBarX,
             timeBarY,
             timeBarWidth,
             timeBarHeight,
             0xcccccc
-        ).setOrigin(0);
+        ).setStrokeStyle(1, 0x999999).setOrigin(0);
 
-        // 실제 타임바 (초록색)
+        // 실제 타임바 개선
         this.timeBar = this.add.rectangle(
             timeBarX,
-            timeBarY + timeBarHeight, // 시작 위치를 바닥으로
+            timeBarY + timeBarHeight,
             timeBarWidth,
             timeBarHeight,
             0x00ff00
-        ).setOrigin(0, 1); // 원점을 왼쪽 아래로 설정
+        ).setOrigin(0, 1);
 
-        // 시간 텍스트
+        // 시간 텍스트 개선
         this.timeText = this.add.text(
             timeBarX + (timeBarWidth / 2),
-            timeBarY + timeBarHeight + this.scale.height * 0.05, // 텍스트를 타임바 아래로
+            timeBarY + timeBarHeight + this.scale.height * 0.05,
             this.timeLeft.toString(),
             {
-                fontSize: `${this.scale.height * 0.05}px`,
-                color: '#000000'
+                fontSize: `${this.scale.height * 0.04}px`,
+                color: '#000000',
+                fontFamily: 'Arial',
+                fontStyle: 'bold',
+                resolution: 2
             }
         ).setOrigin(0.5);
 
@@ -241,22 +261,86 @@ export default class GameScene extends Phaser.Scene {
         }, 0);
 
         if (sum === 10) {
-            // 선택 성공
-            this.selectedLimes.forEach(lime => {
-                this.score += lime.getData('number');
-                lime.getData('text').destroy();
-                lime.destroy();
-            });
-            this.scoreText.setText('Score: ' + this.score);
+            // 선택 성공시 애니메이션 실행
+            this.animateSuccessfulLimes();
         } else {
             // 선택 실패 - 원래 색상으로 복구
             this.selectedLimes.forEach(lime => {
-                lime.setFillStyle(0x32CD32);  // 기본 라임 색상으로 복구
+                lime.setFillStyle(0x32CD32);
                 lime.setData('isSelected', false);
             });
         }
 
         this.selectedLimes = [];
+    }
+
+    animateSuccessfulLimes() {
+        const bottomY = this.scale.height + 50;
+        let completedAnimations = 0;
+        const totalLimes = this.selectedLimes.length;
+
+        this.selectedLimes.forEach((lime, index) => {
+            const startX = lime.x;
+            const startY = lime.y;
+            const text = lime.getData('text');
+
+            // 애니메이션 중인 라임을 최상위 레이어로 이동
+            lime.setDepth(1000);
+            text.setDepth(1001);  // 텍스트는 라임보다 더 위에
+
+            this.score += lime.getData('number');
+
+            this.time.delayedCall(index * 50, () => {
+                this.tweens.add({
+                    targets: [lime, text],
+                    y: startY - 50,
+                    duration: 300,
+                    ease: 'Quad.easeOut',
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: [lime, text],
+                            y: bottomY,
+                            x: startX + Phaser.Math.Between(-50, 50),
+                            angle: Phaser.Math.Between(-180, 180),
+                            scaleX: 0.5,
+                            scaleY: 0.5,
+                            duration: 500,
+                            ease: 'Quad.easeIn',
+                            onComplete: () => {
+                                text.destroy();
+                                lime.destroy();
+
+                                completedAnimations++;
+                                if (completedAnimations === totalLimes) {
+                                    this.scoreText.setText('Score: ' + this.score);
+                                }
+                            }
+                        });
+                    }
+                });
+            });
+        });
+    }
+
+    // 선택 효과도 개선
+    selectLime(lime) {
+        if (!lime.getData('isSelected')) {
+            // 선택 효과 애니메이션
+            this.tweens.add({
+                targets: [lime, lime.getData('text')],
+                scaleX: 1.2,
+                scaleY: 1.2,
+                duration: 100,
+                yoyo: true,
+                ease: 'Quad.easeOut',
+                onComplete: () => {
+                    lime.setFillStyle(0x228B22);
+                }
+            });
+
+            lime.setData('isSelected', true);
+            this.selectedLimes.push(lime);
+        }
     }
 
     updateTimer() {

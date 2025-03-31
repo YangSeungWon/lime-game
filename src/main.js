@@ -6,8 +6,8 @@ const calculateGameSize = () => {
     const windowHeight = window.innerHeight;
 
     // 기본 게임 크기를 더 작게 설정 (4:3 비율)
-    let baseWidth = 640;  // 기존 800에서 축소
-    let baseHeight = 480; // 기존 600에서 축소
+    let baseWidth = 1600;
+    let baseHeight = 1200;
 
     const ratio = baseWidth / baseHeight;
 
@@ -22,16 +22,14 @@ const calculateGameSize = () => {
     return { width, height };
 };
 
-const gameSize = calculateGameSize();
-
 const config = {
     type: Phaser.AUTO,
     scale: {
         mode: Phaser.Scale.FIT,
         parent: 'game',
         autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: gameSize.width,
-        height: gameSize.height
+        width: calculateGameSize().width,
+        height: calculateGameSize().height
     },
     backgroundColor: '#e0f7df',
     physics: {
@@ -40,6 +38,11 @@ const config = {
             gravity: { y: 0 },
             debug: false
         }
+    },
+    render: {
+        pixelArt: false,
+        antialias: true,
+        roundPixels: true
     },
     scene: [GameScene]
 };
