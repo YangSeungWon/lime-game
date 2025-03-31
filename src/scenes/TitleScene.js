@@ -1,4 +1,4 @@
-export default class TitleScene extends Phaser.Scene {
+class TitleScene extends Phaser.Scene {
     static COLORS = {
         PRIMARY: 0x2e7d32,
         SECONDARY: 0x81c784,

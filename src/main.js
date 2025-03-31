@@ -1,52 +1,13 @@
-import Phaser from 'phaser/dist/phaser.js';
-import TitleScene from './scenes/TitleScene.js';
-import GameScene from './scenes/GameScene.js';
-import GameOverScene from './scenes/GameOverScene.js';
-
-const calculateGameSize = () => {
-    const windowWidth = window.innerWidth;
-    const windowHeight = window.innerHeight;
-
-    // 기본 게임 크기를 더 작게 설정 (4:3 비율)
-    let baseWidth = 1600;
-    let baseHeight = 1200;
-
-    const ratio = baseWidth / baseHeight;
-
-    let width = Math.min(windowWidth, baseWidth);
-    let height = width / ratio;
-
-    if (height > windowHeight) {
-        height = Math.min(windowHeight, baseHeight);
-        width = height * ratio;
-    }
-
-    return { width, height };
-};
-
 const config = {
     type: Phaser.AUTO,
+    parent: 'game-container',
+    width: 1600,
+    height: 1200,
+    scene: [TitleScene, GameScene, GameOverScene],
     scale: {
         mode: Phaser.Scale.FIT,
-        parent: 'game',
-        autoCenter: Phaser.Scale.CENTER_BOTH,
-        width: calculateGameSize().width,
-        height: calculateGameSize().height
-    },
-    backgroundColor: '#e0f7df',
-    physics: {
-        default: 'arcade',
-        arcade: {
-            gravity: { y: 0 },
-            debug: false
-        }
-    },
-    render: {
-        pixelArt: false,
-        antialias: true,
-        roundPixels: true
-    },
-    scene: [TitleScene, GameScene, GameOverScene]
+        autoCenter: Phaser.Scale.CENTER_BOTH
+    }
 };
 
 const game = new Phaser.Game(config);
