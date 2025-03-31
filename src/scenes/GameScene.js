@@ -732,8 +732,9 @@ class GameScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        // Smooth time bar update
-        const currentTime = this.initialTime - (this.game.getTime() - this.lastUpdateTime) / 1000;
+        // Calculate elapsed time in seconds since game start
+        const elapsedTime = (time - this.lastUpdateTime) / 1000;
+        const currentTime = Math.max(0, this.initialTime - elapsedTime);
 
         if (currentTime <= 0) {
             this.timeLeft = 0;
@@ -745,10 +746,10 @@ class GameScene extends Phaser.Scene {
 
         // Update time bar height smoothly
         const progress = currentTime / this.initialTime;
-        const height = this.timeBar.height * progress;
 
-        this.timeBar.setSize(this.timeBar.width, this.timeBar.height * progress);
-        this.timeBarHighlight.setSize(this.timeBarHighlight.width, this.timeBar.height * progress);
+        // Update time bar and highlight sizes
+        this.timeBar.setScale(1, progress);
+        this.timeBarHighlight.setScale(1, progress);
 
         // Color gradient effect based on time remaining
         if (progress > 0.6) {
