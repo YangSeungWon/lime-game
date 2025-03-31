@@ -1,3 +1,16 @@
+// SEO를 위한 메타 정보 설정
+document.title = "라임 퍼즐 게임"; // 게임 제목을 적절히 수정해주세요
+
+const metaDescription = document.createElement('meta');
+metaDescription.name = 'description';
+metaDescription.content = '라임을 합쳐 숫자 10을 만들어보세요. 순발력과 계산력을 테스트해보세요.';
+document.head.appendChild(metaDescription);
+
+const metaKeywords = document.createElement('meta');
+metaKeywords.name = 'keywords';
+metaKeywords.content = 'game, puzzle, 사과게임, 라임게임'; // 게임 특성에 맞게 키워드 수정
+document.head.appendChild(metaKeywords);
+
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
