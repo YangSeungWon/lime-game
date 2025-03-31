@@ -25,6 +25,29 @@ const config = {
 
 const game = new Phaser.Game(config);
 
+// 게임 크기 계산 함수
+function calculateGameSize() {
+    const maxWidth = 1600;
+    const maxHeight = 1200;
+    const windowRatio = window.innerWidth / window.innerHeight;
+    const gameRatio = maxWidth / maxHeight;
+
+    let newWidth, newHeight;
+
+    if (windowRatio < gameRatio) {
+        newWidth = window.innerWidth;
+        newHeight = window.innerWidth / gameRatio;
+    } else {
+        newHeight = window.innerHeight;
+        newWidth = window.innerHeight * gameRatio;
+    }
+
+    return {
+        width: Math.min(newWidth, maxWidth),
+        height: Math.min(newHeight, maxHeight)
+    };
+}
+
 // 창 크기 변경 시 게임 크기 조정
 window.addEventListener('resize', () => {
     const newSize = calculateGameSize();

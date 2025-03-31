@@ -392,25 +392,35 @@ class GameScene extends Phaser.Scene {
     selectLimesInRect() {
         // Reset previous selection
         this.selectedLimes.forEach(lime => {
-            const group = lime.getData('group');
-            this.tweens.add({
-                targets: group,
-                scale: 1,
-                duration: 100
-            });
-            lime.setFillStyle(0x7cb342);
-            lime.setData('isSelected', false);
+            if (lime && lime.active) {
+                const group = lime.getData('group');
+                if (group) {
+                    this.tweens.add({
+                        targets: group,
+                        scale: 1,
+                        duration: 100
+                    });
+                }
+                lime.setFillStyle(0x7cb342);
+                lime.setData('isSelected', false);
+            }
         });
         this.selectedLimes = [];
+
+        // Check if selection rectangle exists
+        if (!this.selectionRect) return;
 
         // Calculate rectangle bounds
         const bounds = this.selectionRect.getBounds();
 
         // Check all limes and select those within the rectangle
-        this.limes.forEach(row => {
-            row.forEach(lime => {
-                if (lime.active) {
+        this.limes.forEach((row, rowIndex) => {
+            if (!row) return;
+            row.forEach((lime, colIndex) => {
+                if (lime && lime.active) {
                     const group = lime.getData('group');
+                    if (!group) return;
+
                     if (bounds.contains(group.x, group.y)) {
                         lime.setFillStyle(0x558b2f);
                         lime.setData('isSelected', true);
@@ -645,12 +655,17 @@ class GameScene extends Phaser.Scene {
     }
 
     createNewLime(row, col) {
-        console.log('Creating lime at:', row, col);
-        if (row < 0 || row >= 17 || !this.limes[row]) {
+        // Validate row and column
+        if (typeof row !== 'number' || typeof col !== 'number') {
+            console.error('Invalid row or column type:', { row, col });
+            return null;
+        }
+
+        if (row < 0 || row >= 10 || !this.limes[row]) {
             console.error('Invalid row:', row);
             return null;
         }
-        if (col < 0 || col >= 10) {
+        if (col < 0 || col >= 17) {
             console.error('Invalid column:', col);
             return null;
         }

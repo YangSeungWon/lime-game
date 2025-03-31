@@ -131,15 +131,16 @@ class GameOverScene extends Phaser.Scene {
         const panelWidth = width * 0.7;
         const panelHeight = height * 0.6;
 
-        // Create panel with shadow
-        const panelShadow = this.add.rectangle(5, 5, panelWidth, panelHeight, 0x000000, 0.5)
-            .setOrigin(0.5)
-            .setRoundedRectangle(20);
+        // Create panel with shadow using Graphics
+        const panelShadow = this.add.graphics();
+        panelShadow.fillStyle(0x000000, 0.5);
+        panelShadow.fillRoundedRect(5 - panelWidth / 2, 5 - panelHeight / 2, panelWidth, panelHeight, 20);
 
-        const panel = this.add.rectangle(0, 0, panelWidth, panelHeight, 0xffffff, 0.9)
-            .setOrigin(0.5)
-            .setRoundedRectangle(20)
-            .setStrokeStyle(4, 0x81c784);
+        const panel = this.add.graphics();
+        panel.lineStyle(4, 0x81c784);
+        panel.fillStyle(0xffffff, 0.9);
+        panel.fillRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 20);
+        panel.strokeRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 20);
 
         container.add([panelShadow, panel]);
 
@@ -324,22 +325,29 @@ class GameOverScene extends Phaser.Scene {
         const container = this.add.container(x, y);
 
         // Button shadow
-        const shadow = this.add.rectangle(4, 4, width, height, 0x000000, 0.3)
-            .setOrigin(0.5)
-            .setRoundedRectangle(15);
+        const shadow = this.add.graphics();
+        shadow.fillStyle(0x000000, 0.3);
+        shadow.fillRoundedRect(4 - width / 2, 4 - height / 2, width, height, 15);
 
         // Button background
-        const button = this.add.rectangle(0, 0, width, height, color)
-            .setOrigin(0.5)
-            .setRoundedRectangle(15)
-            .setInteractive({ useHandCursor: true })
+        const buttonGraphics = this.add.graphics();
+        buttonGraphics.fillStyle(color);
+        buttonGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
+
+        // Create a hit area for the button
+        const hitArea = new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height);
+        buttonGraphics.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains)
             .on('pointerover', () => {
-                button.setFillStyle(0x1b5e20);
+                buttonGraphics.clear();
+                buttonGraphics.fillStyle(0x1b5e20);
+                buttonGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
                 container.setScale(1.05);
                 glow.setAlpha(0.5);
             })
             .on('pointerout', () => {
-                button.setFillStyle(color);
+                buttonGraphics.clear();
+                buttonGraphics.fillStyle(color);
+                buttonGraphics.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
                 container.setScale(1);
                 glow.setAlpha(0.2);
             })
@@ -354,9 +362,9 @@ class GameOverScene extends Phaser.Scene {
             });
 
         // Button glow effect
-        const glow = this.add.rectangle(0, 0, width + 10, height + 10, 0x81c784, 0.2)
-            .setOrigin(0.5)
-            .setRoundedRectangle(20);
+        const glow = this.add.graphics();
+        glow.fillStyle(0x81c784, 0.2);
+        glow.fillRoundedRect(-width / 2 - 5, -height / 2 - 5, width + 10, height + 10, 20);
 
         // Button text
         const text = this.add.text(0, 0, label, {
@@ -407,20 +415,8 @@ class GameOverScene extends Phaser.Scene {
             icon = iconContainer;
         }
 
-        container.add([glow, shadow, button, text, icon]);
+        container.add([glow, shadow, buttonGraphics, text, icon]);
 
-        // Add pulse animation to glow
-        this.tweens.add({
-            targets: glow,
-            scaleX: 1.05,
-            scaleY: 1.05,
-            alpha: 0.3,
-            duration: 1500,
-            ease: 'Sine.easeInOut',
-            yoyo: true,
-            repeat: -1
-        });
-
-        return { container, button, text };
+        return { container, buttonGraphics, text };
     }
 }
