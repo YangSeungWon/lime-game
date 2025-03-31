@@ -15,35 +15,49 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     preload() {
-        // assets 폴더 안에 이미지를 넣고 경로를 수정
+        console.log('TitleScene - preload 시작');
         this.load.image('lime', '/assets/lime.svg');
         this.load.image('leaf', '/assets/leaf.svg');
         this.load.image('particle', '/assets/particle.svg');
+        console.log('TitleScene - 이미지 로드 완료');
     }
 
     create() {
+        console.log('TitleScene - create 시작');
         const { width, height } = this.scale;
+        console.log('Canvas 크기:', width, height);
 
-        // Create a more interesting background with multiple gradient layers
-        this.createBackground(width, height);
+        try {
+            console.log('배경 생성 시작');
+            this.createBackground(width, height);
+            console.log('배경 생성 완료');
 
-        // Add floating limes in the background
-        this.createFloatingLimes(width, height);
+            console.log('플로팅 라임 생성 시작');
+            this.createFloatingLimes(width, height);
+            console.log('플로팅 라임 생성 완료');
 
-        // Add particle effects
-        this.createParticles(width, height);
+            console.log('파티클 생성 시작');
+            this.createParticles(width, height);
+            console.log('파티클 생성 완료');
 
-        // Title with animation
-        this.createTitle(width, height);
+            console.log('타이틀 생성 시작');
+            this.createTitle(width, height);
+            console.log('타이틀 생성 완료');
 
-        // Animated lime icon
-        this.createLimeIcon(width, height);
+            console.log('라임 아이콘 생성 시작');
+            this.createLimeIcon(width, height);
+            console.log('라임 아이콘 생성 완료');
 
-        // Start button with better styling and animations
-        this.createStartButton(width, height);
+            console.log('Start 버튼 생성 시작');
+            this.createStartButton(width, height);
+            console.log('Start 버튼 생성 완료');
 
-        // Game description with better styling
-        this.createGameDescription(width, height);
+            console.log('게임 설명 생성 시작');
+            this.createGameDescription(width, height);
+            console.log('게임 설명 생성 완료');
+        } catch (error) {
+            console.error('씬 생성 중 에러 발생:', error);
+        }
 
         // Add version number and credits
         this.add.text(width - 20, height - 20, 'v1.0', {
@@ -120,20 +134,25 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     createParticles(width, height) {
-        // Create particle emitter for a subtle effect
-        const particles = this.add.particles('particle');
+        try {
+            console.log('파티클 생성 시작');
+            const particles = this.add.particles('particle');
 
-        particles.createEmitter({
-            x: { min: 0, max: width },
-            y: height + 10,
-            speedY: { min: -30, max: -60 },
-            speedX: { min: -10, max: 10 },
-            scale: { start: 0.4, end: 0 },
-            lifespan: 6000,
-            frequency: 200,
-            alpha: { start: 0.3, end: 0 },
-            tint: [0xffffff, 0xc5e1a5, 0xaed581]
-        });
+            particles.createEmitter({
+                x: { min: 0, max: width },
+                y: height + 10,
+                speedY: { min: -30, max: -60 },
+                speedX: { min: -10, max: 10 },
+                scale: { start: 0.4, end: 0 },
+                lifespan: 6000,
+                frequency: 200,
+                alpha: { start: 0.3, end: 0 },
+                tint: [0xffffff, 0xc5e1a5, 0xaed581]
+            });
+            console.log('파티클 생성 완료');
+        } catch (error) {
+            console.error('파티클 생성 실패:', error);
+        }
     }
 
     createTitle(width, height) {
@@ -241,39 +260,38 @@ export default class TitleScene extends Phaser.Scene {
     }
 
     createStartButton(width, height) {
-        // Create a container for the button
+        console.log('createStartButton - 시작');
         const buttonContainer = this.add.container(width / 2, height * 0.7);
+        console.log('버튼 위치:', width / 2, height * 0.7);
 
-        // Create button shadow
-        const buttonShadow = this.add.rectangle(4, 4, 220, 70, 0x000000, 0.3)
-            .setOrigin(0.5)
-            .setRoundedRectangle(35);
+        // Create button shadow using Graphics
+        const buttonShadow = this.add.graphics();
+        buttonShadow.fillStyle(0x000000, 0.3);
+        buttonShadow.fillRoundedRect(-110 + 4, -35 + 4, 220, 70, 35);
 
-        // Create the button background
-        const buttonBg = this.add.rectangle(0, 0, 220, 70, 0x2e7d32)
-            .setOrigin(0.5)
-            .setRoundedRectangle(35)
-            .setInteractive()
+        // Create the button background using Graphics
+        const buttonBg = this.add.graphics();
+        buttonBg.fillStyle(0x2e7d32, 1);
+        buttonBg.fillRoundedRect(-110, -35, 220, 70, 35);
+
+        // Create a hit area for the button
+        const hitArea = new Phaser.Geom.Rectangle(-110, -35, 220, 70);
+        buttonContainer.setInteractive(hitArea, Phaser.Geom.Rectangle.Contains)
             .on('pointerover', () => {
-                buttonBg.setFillStyle(0x1b5e20);
+                console.log('버튼 호버');
+                buttonBg.clear();
+                buttonBg.fillStyle(0x1b5e20, 1);
+                buttonBg.fillRoundedRect(-110, -35, 220, 70, 35);
                 buttonContainer.setScale(1.05);
-                this.tweens.add({
-                    targets: buttonGlow,
-                    alpha: 0.8,
-                    duration: 200
-                });
             })
             .on('pointerout', () => {
-                buttonBg.setFillStyle(0x2e7d32);
+                buttonBg.clear();
+                buttonBg.fillStyle(0x2e7d32, 1);
+                buttonBg.fillRoundedRect(-110, -35, 220, 70, 35);
                 buttonContainer.setScale(1);
-                this.tweens.add({
-                    targets: buttonGlow,
-                    alpha: 0.3,
-                    duration: 200
-                });
             })
             .on('pointerdown', () => {
-                // Add click effect
+                console.log('버튼 클릭');
                 this.tweens.add({
                     targets: buttonContainer,
                     scaleX: 0.95,
@@ -286,10 +304,10 @@ export default class TitleScene extends Phaser.Scene {
                 });
             });
 
-        // Add a glow effect
-        const buttonGlow = this.add.rectangle(0, 0, 230, 80, 0x4caf50, 0.3)
-            .setOrigin(0.5)
-            .setRoundedRectangle(40);
+        // Add glow effect using Graphics
+        const buttonGlow = this.add.graphics();
+        buttonGlow.fillStyle(0x4caf50, 0.3);
+        buttonGlow.fillRoundedRect(-115, -40, 230, 80, 40);
 
         // Add the text
         const buttonText = this.add.text(0, 0, 'START', {
@@ -309,6 +327,7 @@ export default class TitleScene extends Phaser.Scene {
         // Add a subtle pulse animation
         this.tweens.add({
             targets: buttonGlow,
+            alpha: { from: 0.3, to: 0.5 },
             scaleX: 1.1,
             scaleY: 1.1,
             alpha: 0.5,
@@ -323,10 +342,12 @@ export default class TitleScene extends Phaser.Scene {
         // Create a container for the description
         const descContainer = this.add.container(width / 2, height * 0.85);
 
-        // Add a background for better readability
-        const descBg = this.add.rectangle(0, 0, width * 0.7, 50, 0x000000, 0.1)
-            .setOrigin(0.5)
-            .setRoundedRectangle(25);
+        // Add a background for better readability using Graphics
+        const descBg = this.add.graphics();
+        const bgWidth = width * 0.7;
+        const bgHeight = 50;
+        descBg.fillStyle(0x000000, 0.1);
+        descBg.fillRoundedRect(-bgWidth / 2, -bgHeight / 2, bgWidth, bgHeight, 25);
 
         // Add the description text
         const descText = this.add.text(0, 0, 'Connect limes to make sum of 10!', {
