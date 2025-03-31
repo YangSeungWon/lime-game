@@ -4,8 +4,9 @@ export default class GameScene extends Phaser.Scene {
         this.limes = [];
         this.selectedLimes = [];
         this.score = 0;
-        this.initialTime = 60;
+        this.initialTime = 120;
         this.timeLeft = this.initialTime;
+        this.lastUpdateTime = 0;
         this.isSelecting = false;
         this.selectionRect = null;  // 선택 사각형
         this.dragStart = null;      // 드래그 시작 위치
@@ -27,6 +28,9 @@ export default class GameScene extends Phaser.Scene {
 
         // 입력 이벤트 설정
         this.setupInputEvents();
+
+        // 초기 시작 시간 저장
+        this.lastUpdateTime = this.game.getTime();
     }
 
     calculateGameArea() {
@@ -42,9 +46,9 @@ export default class GameScene extends Phaser.Scene {
         // 게임 영역 계산 (타이머 영역을 제외한 나머지)
         this.gameArea = {
             x: padding,
-            y: height * 0.12, // 상단 여백 축소
+            y: height * 0.15,
             width: playWidth - (padding * 2),
-            height: height * 0.8, // 게임 영역 확대
+            height: height,
             cellSize: 0
         };
 
@@ -125,22 +129,53 @@ export default class GameScene extends Phaser.Scene {
             }
         );
 
+        // 타임바 크기와 위치 계산
+        const barWidth = this.timerArea.width * 0.35;
+        const barHeight = this.timerArea.height * 0.65;
+        const barX = this.timerArea.x + (this.timerArea.width - barWidth) / 2;
+        const barY = this.timerArea.height * 0.2;
+
+        // 타임바 설정을 객체로 저장
+        this.timeBarConfig = {
+            x: barX,
+            y: barY,
+            width: barWidth,
+            height: barHeight,
+            borderWidth: 3
+        };
+
+        // 외부 테두리 (검은색)
+        this.add.rectangle(
+            this.timeBarConfig.x - this.timeBarConfig.borderWidth,
+            this.timeBarConfig.y - this.timeBarConfig.borderWidth,
+            this.timeBarConfig.width + (this.timeBarConfig.borderWidth * 2),
+            this.timeBarConfig.height + (this.timeBarConfig.borderWidth * 2),
+            0x000000
+        ).setOrigin(0);
         // 타임바 생성
-        const timeBarWidth = this.timerArea.width * 0.3; // 타임바 폭 축소
-        const timeBarHeight = this.timerArea.height * 0.6;
+        const timeBarWidth = this.timerArea.width * 0.3;
+        const timeBarHeight = this.timerArea.height * 0.65;
         const timeBarX = this.timerArea.x + (this.timerArea.width * 0.35);
         const timeBarY = this.timerArea.height * 0.85 - timeBarHeight;
 
         // 타임바 배경 개선
         this.add.rectangle(
+            timeBarX - 2,
+            timeBarY - 2,
+            timeBarWidth + 4,
+            timeBarHeight + 4,
+            0xffffff,  // 흰색 테두리
+        ).setOrigin(0);
+
+        this.add.rectangle(
             timeBarX,
             timeBarY,
             timeBarWidth,
             timeBarHeight,
-            0xcccccc
-        ).setStrokeStyle(1, 0x999999).setOrigin(0);
+            0x222222,  // 어두운 배경
+        ).setOrigin(0);
 
-        // 실제 타임바 개선
+        // 실제 타임바 (그라데이션 효과를 위해 여러 개의 바 생성)
         this.timeBar = this.add.rectangle(
             timeBarX,
             timeBarY + timeBarHeight,
@@ -148,6 +183,15 @@ export default class GameScene extends Phaser.Scene {
             timeBarHeight,
             0x00ff00
         ).setOrigin(0, 1);
+
+        // 타임바 하이라이트 효과
+        this.timeBarHighlight = this.add.rectangle(
+            timeBarX + 2,
+            timeBarY + timeBarHeight,
+            timeBarWidth * 0.3,
+            timeBarHeight,
+            0xffffff
+        ).setOrigin(0, 1).setAlpha(0.2);
 
         // 시간 텍스트 개선
         this.timeText = this.add.text(
@@ -174,14 +218,6 @@ export default class GameScene extends Phaser.Scene {
             0x000000,
             0.2
         );
-
-        // 타이머 설정
-        this.timer = this.time.addEvent({
-            delay: 1000,
-            callback: this.updateTimer,
-            callbackScope: this,
-            loop: true
-        });
     }
 
     setupInputEvents() {
@@ -279,6 +315,9 @@ export default class GameScene extends Phaser.Scene {
         let completedAnimations = 0;
         const totalLimes = this.selectedLimes.length;
 
+        this.score += totalLimes;
+        this.scoreText.setText('Score: ' + this.score);
+
         this.selectedLimes.forEach((lime, index) => {
             const startX = lime.x;
             const startY = lime.y;
@@ -288,36 +327,29 @@ export default class GameScene extends Phaser.Scene {
             lime.setDepth(1000);
             text.setDepth(1001);  // 텍스트는 라임보다 더 위에
 
-            this.score += lime.getData('number');
+            this.tweens.add({
+                targets: [lime, text],
+                y: startY - 50,
+                duration: 300,
+                ease: 'Quad.easeOut',
+                onComplete: () => {
+                    this.tweens.add({
+                        targets: [lime, text],
+                        y: bottomY,
+                        x: startX + Phaser.Math.Between(-50, 50),
+                        angle: Phaser.Math.Between(-180, 180),
+                        scaleX: 0.5,
+                        scaleY: 0.5,
+                        duration: 500,
+                        ease: 'Quad.easeIn',
+                        onComplete: () => {
+                            text.destroy();
+                            lime.destroy();
 
-            this.time.delayedCall(index * 50, () => {
-                this.tweens.add({
-                    targets: [lime, text],
-                    y: startY - 50,
-                    duration: 300,
-                    ease: 'Quad.easeOut',
-                    onComplete: () => {
-                        this.tweens.add({
-                            targets: [lime, text],
-                            y: bottomY,
-                            x: startX + Phaser.Math.Between(-50, 50),
-                            angle: Phaser.Math.Between(-180, 180),
-                            scaleX: 0.5,
-                            scaleY: 0.5,
-                            duration: 500,
-                            ease: 'Quad.easeIn',
-                            onComplete: () => {
-                                text.destroy();
-                                lime.destroy();
-
-                                completedAnimations++;
-                                if (completedAnimations === totalLimes) {
-                                    this.scoreText.setText('Score: ' + this.score);
-                                }
-                            }
-                        });
-                    }
-                });
+                            completedAnimations++;
+                        }
+                    });
+                }
             });
         });
     }
@@ -343,25 +375,37 @@ export default class GameScene extends Phaser.Scene {
         }
     }
 
-    updateTimer() {
-        this.timeLeft--;
-        this.timeText.setText(this.timeLeft);
+    update(time, delta) {
+        // 부드러운 타임바 업데이트
+        const currentTime = this.initialTime - (this.game.getTime() - this.lastUpdateTime) / 1000;
 
-        // 타임바 높이 업데이트 (아래에서 위로 줄어듦)
-        const progress = this.timeLeft / this.initialTime;
-        const height = this.timerArea.height * 0.7 * progress;
-        this.timeBar.setSize(this.timerArea.width * 0.4, height);
-
-        // y 위치는 고정 (아래쪽 기준점)
-        this.timeBar.setY(this.timerArea.height * 0.85);
-
-        if (this.timeLeft <= 10) {
-            this.timeBar.setFillStyle(0xff0000);
+        if (currentTime <= 0) {
+            this.timeLeft = 0;
+            this.gameOver();
+            return;
         }
 
-        if (this.timeLeft <= 0) {
-            this.timer.remove();
-            this.gameOver();
+        this.timeLeft = Math.ceil(currentTime);
+
+        // 타임바 높이 부드럽게 업데이트
+        const progress = currentTime / this.initialTime;
+        const height = this.timerArea.height * 0.6 * progress;
+
+        this.timeBar.setSize(this.timerArea.width * 0.3, height);
+        this.timeBarHighlight.setSize(this.timerArea.width * 0.09, height);
+
+        // 색상 그라데이션 효과
+        if (progress > 0.5) {
+            this.timeBar.setFillStyle(0x00ff00);  // 초록색
+        } else if (progress > 0.2) {
+            this.timeBar.setFillStyle(0xffff00);  // 노란색
+        } else {
+            this.timeBar.setFillStyle(0xff0000);  // 빨간색
+        }
+
+        // 시간 텍스트 업데이트
+        if (this.timeText) {
+            this.timeText.setText(Math.ceil(currentTime).toString());
         }
     }
 
