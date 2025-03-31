@@ -17,6 +17,16 @@ export default class GameScene extends Phaser.Scene {
     }
 
     create() {
+        // 17x10 크기의 2차원 배열 초기화
+        const ROWS = 17;
+        const COLS = 10;
+
+        for (let i = 0; i < ROWS; i++) {
+            this.limes[i] = new Array(COLS).fill(null);
+        }
+
+        console.log('Initialized limes array:', ROWS, 'x', COLS);
+
         // Calculate game area dimensions
         this.calculateGameArea();
 
@@ -74,11 +84,11 @@ export default class GameScene extends Phaser.Scene {
     createBackground() {
         // Main background
         this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xe8f5e9).setOrigin(0);
-        
+
         // Create subtle pattern
         const pattern = this.add.graphics();
         pattern.fillStyle(0xc8e6c9, 0.3);
-        
+
         for (let x = 0; x < this.scale.width; x += 40) {
             for (let y = 0; y < this.scale.height; y += 40) {
                 if ((x + y) % 80 === 0) {
@@ -86,13 +96,13 @@ export default class GameScene extends Phaser.Scene {
                 }
             }
         }
-        
+
         // Add decorative elements
         for (let i = 0; i < 5; i++) {
             const x = Phaser.Math.Between(0, this.scale.width);
             const y = Phaser.Math.Between(0, this.scale.height);
             const size = Phaser.Math.Between(100, 200);
-            
+
             const decoration = this.add.circle(x, y, size, 0xa5d6a7, 0.1);
             this.tweens.add({
                 targets: decoration,
@@ -122,17 +132,17 @@ export default class GameScene extends Phaser.Scene {
 
                 // Create lime with improved visuals
                 const limeGroup = this.add.container(x, y);
-                
+
                 // Shadow for depth
                 const shadow = this.add.circle(2, 2, limeRadius, 0x000000, 0.2);
-                
+
                 // Main lime circle
                 const lime = this.add.circle(0, 0, limeRadius, 0x7cb342);
                 lime.setStrokeStyle(2, 0x558b2f);
-                
+
                 // Highlight effect
                 const highlight = this.add.circle(-limeRadius * 0.3, -limeRadius * 0.3, limeRadius * 0.25, 0xffffff, 0.3);
-                
+
                 // Number text with improved styling
                 const number = Phaser.Math.Between(1, 9);
                 const text = this.add.text(0, 0, number.toString(), {
@@ -142,17 +152,17 @@ export default class GameScene extends Phaser.Scene {
                     fontStyle: 'bold',
                     resolution: 2
                 }).setOrigin(0.5);
-                
+
                 // Add shadow to text
                 text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
-                
+
                 // Add all elements to the lime group
                 limeGroup.add([shadow, lime, highlight, text]);
-                
+
                 // Make interactive
                 lime.setInteractive({ useHandCursor: true });
                 lime.input.hitArea.setTo(-limeRadius, -limeRadius, limeRadius * 2, limeRadius * 2);
-                
+
                 // Store data with the lime
                 lime.setData({
                     number: number,
@@ -162,11 +172,11 @@ export default class GameScene extends Phaser.Scene {
                     col: col,
                     isSelected: false
                 });
-                
+
                 // Add to grid container
                 this.gridContainer.add(limeGroup);
                 this.limes[row][col] = lime;
-                
+
                 // Add subtle idle animation
                 this.tweens.add({
                     targets: limeGroup,
@@ -184,17 +194,17 @@ export default class GameScene extends Phaser.Scene {
     createUI() {
         // Create UI container
         this.uiContainer = this.add.container(0, 0);
-        
+
         // Score display with improved styling
         const scorePanel = this.add.rectangle(
-            this.gameArea.x, 
-            this.gameArea.y * 0.4, 
-            this.gameArea.width * 0.2, 
+            this.gameArea.x,
+            this.gameArea.y * 0.4,
+            this.gameArea.width * 0.2,
             this.gameArea.y * 0.5,
             0xffffff,
             0.7
         ).setOrigin(0, 0.5).setStrokeStyle(2, 0x81c784);
-        
+
         this.scoreText = this.add.text(
             scorePanel.x + scorePanel.width / 2,
             scorePanel.y,
@@ -207,9 +217,9 @@ export default class GameScene extends Phaser.Scene {
                 resolution: 2
             }
         ).setOrigin(0.5);
-        
+
         this.uiContainer.add([scorePanel, this.scoreText]);
-        
+
         // Combo text
         this.comboText = this.add.text(
             this.scoreText.x,
@@ -223,9 +233,9 @@ export default class GameScene extends Phaser.Scene {
                 resolution: 2
             }
         ).setOrigin(0.5).setAlpha(0);
-        
+
         this.uiContainer.add(this.comboText);
-        
+
         // Timer area with improved visuals
         const timerPanel = this.add.rectangle(
             this.timerArea.x + this.timerArea.width * 0.5,
@@ -235,9 +245,9 @@ export default class GameScene extends Phaser.Scene {
             0xffffff,
             0.2
         ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
-        
+
         this.uiContainer.add(timerPanel);
-        
+
         // Timer label
         const timerLabel = this.add.text(
             timerPanel.x,
@@ -251,15 +261,15 @@ export default class GameScene extends Phaser.Scene {
                 resolution: 2
             }
         ).setOrigin(0.5);
-        
+
         this.uiContainer.add(timerLabel);
-        
+
         // Time bar container
         const timeBarWidth = this.timerArea.width * 0.4;
         const timeBarHeight = this.timerArea.height * 0.6;
         const timeBarX = timerPanel.x - timeBarWidth / 2;
         const timeBarY = timerPanel.y - timeBarHeight / 2 + timerPanel.height * 0.1;
-        
+
         // Time bar background
         const timeBarBg = this.add.rectangle(
             timeBarX,
@@ -269,9 +279,9 @@ export default class GameScene extends Phaser.Scene {
             0x424242,
             0.8
         ).setOrigin(0, 0).setStrokeStyle(3, 0xffffff);
-        
+
         this.uiContainer.add(timeBarBg);
-        
+
         // Actual time bar
         this.timeBar = this.add.rectangle(
             timeBarX,
@@ -280,9 +290,9 @@ export default class GameScene extends Phaser.Scene {
             timeBarHeight,
             0x4caf50
         ).setOrigin(0, 1);
-        
+
         this.uiContainer.add(this.timeBar);
-        
+
         // Time bar highlight
         this.timeBarHighlight = this.add.rectangle(
             timeBarX + timeBarWidth * 0.7,
@@ -291,9 +301,9 @@ export default class GameScene extends Phaser.Scene {
             timeBarHeight,
             0xffffff
         ).setOrigin(0, 1).setAlpha(0.2);
-        
+
         this.uiContainer.add(this.timeBarHighlight);
-        
+
         // Time text
         this.timeText = this.add.text(
             timerPanel.x,
@@ -307,9 +317,9 @@ export default class GameScene extends Phaser.Scene {
                 resolution: 2
             }
         ).setOrigin(0.5);
-        
+
         this.uiContainer.add(this.timeText);
-        
+
         // Add a divider line
         const divider = this.add.line(
             this.timerArea.x,
@@ -321,7 +331,7 @@ export default class GameScene extends Phaser.Scene {
             0x81c784,
             0.5
         );
-        
+
         this.uiContainer.add(divider);
     }
 
@@ -406,7 +416,7 @@ export default class GameScene extends Phaser.Scene {
                         lime.setFillStyle(0x558b2f);
                         lime.setData('isSelected', true);
                         this.selectedLimes.push(lime);
-                        
+
                         // Add selection animation
                         this.tweens.add({
                             targets: group,
@@ -417,7 +427,7 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         });
-        
+
         // Update selection rectangle color based on sum
         const sum = this.calculateSum();
         if (sum === 10) {
@@ -450,7 +460,7 @@ export default class GameScene extends Phaser.Scene {
                 const group = lime.getData('group');
                 lime.setFillStyle(0x7cb342);
                 lime.setData('isSelected', false);
-                
+
                 // Add shake animation for failed selection
                 this.tweens.add({
                     targets: group,
@@ -468,7 +478,7 @@ export default class GameScene extends Phaser.Scene {
                     }
                 });
             });
-            
+
             // Reset combo
             this.resetCombo();
         }
@@ -479,21 +489,21 @@ export default class GameScene extends Phaser.Scene {
     handleSuccessfulSelection() {
         // Increase combo count
         this.comboCount++;
-        
+
         // Calculate points with combo multiplier
         const basePoints = this.selectedLimes.length;
         const comboMultiplier = Math.min(this.comboCount, 5);
         const pointsEarned = basePoints * comboMultiplier;
-        
+
         // Update score
         this.score += pointsEarned;
         this.scoreText.setText('Score: ' + this.score);
-        
+
         // Show combo text
         if (this.comboCount > 1) {
             this.comboText.setText(`Combo x${comboMultiplier}! +${pointsEarned}`);
             this.comboText.setAlpha(1);
-            
+
             this.tweens.add({
                 targets: this.comboText,
                 scale: 1.3,
@@ -509,18 +519,18 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         }
-        
+
         // Reset combo timer
         if (this.comboTimer) {
             this.comboTimer.remove();
         }
-        
+
         // Set new combo timer
         this.comboTimer = this.time.delayedCall(3000, this.resetCombo, [], this);
-        
+
         // Animate successful limes
         this.animateSuccessfulLimes();
-        
+
         // Add time bonus (1 second per lime)
         this.lastUpdateTime -= (this.selectedLimes.length * 1000);
     }
@@ -535,7 +545,7 @@ export default class GameScene extends Phaser.Scene {
 
     animateSuccessfulLimes() {
         const bottomY = this.scale.height + 50;
-        
+
         // Create a flash effect
         const flash = this.add.rectangle(
             this.scale.width / 2,
@@ -544,7 +554,7 @@ export default class GameScene extends Phaser.Scene {
             this.scale.height,
             0xffffff
         ).setAlpha(0);
-        
+
         this.tweens.add({
             targets: flash,
             alpha: 0.3,
@@ -552,14 +562,14 @@ export default class GameScene extends Phaser.Scene {
             yoyo: true,
             onComplete: () => flash.destroy()
         });
-        
+
         // Animate each selected lime
         this.selectedLimes.forEach((lime, index) => {
             const group = lime.getData('group');
             const text = lime.getData('text');
             const startX = group.x;
             const startY = group.y;
-            
+
             // Create score popup
             const scorePopup = this.add.text(
                 startX,
@@ -574,7 +584,7 @@ export default class GameScene extends Phaser.Scene {
                     strokeThickness: 4
                 }
             ).setOrigin(0.5).setDepth(1000);
-            
+
             // Animate score popup
             this.tweens.add({
                 targets: scorePopup,
@@ -584,10 +594,10 @@ export default class GameScene extends Phaser.Scene {
                 ease: 'Quad.easeOut',
                 onComplete: () => scorePopup.destroy()
             });
-            
+
             // Set lime to top layer
             group.setDepth(100 + index);
-            
+
             // First animation: bounce up
             this.tweens.add({
                 targets: group,
@@ -610,7 +620,7 @@ export default class GameScene extends Phaser.Scene {
                         onComplete: () => {
                             // Remove lime and text
                             group.destroy();
-                            
+
                             // Replace with a new lime
                             this.createNewLime(lime.getData('row'), lime.getData('col'));
                         }
@@ -618,31 +628,41 @@ export default class GameScene extends Phaser.Scene {
                 }
             });
         });
-        
+
         // Play success sound (placeholder)
         // this.sound.play('success');
     }
 
     createNewLime(row, col) {
+        console.log('Creating lime at:', row, col);
+        if (row < 0 || row >= 17 || !this.limes[row]) {
+            console.error('Invalid row:', row);
+            return null;
+        }
+        if (col < 0 || col >= 10) {
+            console.error('Invalid column:', col);
+            return null;
+        }
+
         const cellSize = this.gameArea.cellSize;
         const limeRadius = cellSize * 0.38;
         const x = this.gameArea.x + (col * cellSize) + (cellSize / 2);
         const y = this.gameArea.y - cellSize; // Start above the grid
         const targetY = this.gameArea.y + (row * cellSize) + (cellSize / 2);
-        
+
         // Create new lime group
         const limeGroup = this.add.container(x, y);
-        
+
         // Shadow
         const shadow = this.add.circle(2, 2, limeRadius, 0x000000, 0.2);
-        
+
         // Main lime
         const lime = this.add.circle(0, 0, limeRadius, 0x7cb342);
         lime.setStrokeStyle(2, 0x558b2f);
-        
+
         // Highlight
         const highlight = this.add.circle(-limeRadius * 0.3, -limeRadius * 0.3, limeRadius * 0.25, 0xffffff, 0.3);
-        
+
         // Number
         const number = Phaser.Math.Between(1, 9);
         const text = this.add.text(0, 0, number.toString(), {
@@ -652,16 +672,16 @@ export default class GameScene extends Phaser.Scene {
             fontStyle: 'bold',
             resolution: 2
         }).setOrigin(0.5);
-        
+
         text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
-        
+
         // Add all elements to group
         limeGroup.add([shadow, lime, highlight, text]);
-        
+
         // Make interactive
         lime.setInteractive({ useHandCursor: true });
         lime.input.hitArea.setTo(-limeRadius, -limeRadius, limeRadius * 2, limeRadius * 2);
-        
+
         // Store data
         lime.setData({
             number: number,
@@ -671,11 +691,11 @@ export default class GameScene extends Phaser.Scene {
             col: col,
             isSelected: false
         });
-        
+
         // Add to grid container
         this.gridContainer.add(limeGroup);
         this.limes[row][col] = lime;
-        
+
         // Animate falling into place
         this.tweens.add({
             targets: limeGroup,
@@ -688,27 +708,26 @@ export default class GameScene extends Phaser.Scene {
     showTutorialHint() {
         // Create tutorial hint
         const hint = this.add.container(this.scale.width / 2, this.scale.height / 2);
-        
+
         // Background
-        const hintBg = this.add.rectangle(0, 0, this.scale.width * 0.6, this.scale.height * 0.3, 0x000000, 0.7)
-            .setOrigin(0.5)
-            .setRoundedRectangle(20);
-        
+        const hintBg = this.add.graphics();
+        hintBg.fillStyle(0x000000, 0.7);
+
         // Text
-        const hintText = this.add.text(0, 0, 
-            "Drag to select limes that sum to 10!\nMake combos for bonus points!", 
+        const hintText = this.add.text(0, 0,
+            "Drag to select limes that sum to 10!\nMake combos for bonus points!",
             {
                 fontSize: '24px',
                 color: '#ffffff',
-                fontFamily: 'Arial, sans-serif',
+                fontFamily: 'Arial',
                 align: 'center',
                 lineSpacing: 10
             }
         ).setOrigin(0.5);
-        
+
         hint.add([hintBg, hintText]);
         hint.setDepth(2000);
-        
+
         // Animate hint
         this.tweens.add({
             targets: hint,
@@ -745,7 +764,7 @@ export default class GameScene extends Phaser.Scene {
             this.timeBar.setFillStyle(0xffc107); // Yellow
         } else {
             this.timeBar.setFillStyle(0xf44336); // Red
-            
+
             // Add pulsing effect when time is low
             if (progress < 0.2 && Math.floor(currentTime) % 2 === 0) {
                 this.timeBar.setAlpha(0.8);
@@ -758,7 +777,7 @@ export default class GameScene extends Phaser.Scene {
         if (this.timeText) {
             this.timeText.setText(Math.ceil(currentTime).toString());
         }
-        
+
         // Update selection sum display if selecting
         if (this.isSelecting && this.selectedLimes.length > 0) {
             const sum = this.calculateSum();
