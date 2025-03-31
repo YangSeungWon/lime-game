@@ -1,5 +1,7 @@
 import Phaser from 'phaser/dist/phaser.js';
+import TitleScene from './scenes/TitleScene.js';
 import GameScene from './scenes/GameScene.js';
+import GameOverScene from './scenes/GameOverScene.js';
 
 const calculateGameSize = () => {
     const windowWidth = window.innerWidth;
@@ -44,7 +46,7 @@ const config = {
         antialias: true,
         roundPixels: true
     },
-    scene: [GameScene]
+    scene: [TitleScene, GameScene, GameOverScene]
 };
 
 const game = new Phaser.Game(config);

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="50" height="50" viewBox="0 0 50 50" xmlns="http://www.w3.org/2000/svg">
+    <!-- Leaf shape -->
+    <path d="M25,5 
+             C40,5 45,20 45,35
+             C45,40 40,45 35,45
+             C20,45 5,40 5,25
+             C5,15 15,5 25,5Z" 
+          fill="#81C784"/>
+    <!-- Leaf vein -->
+    <path d="M25,5 C25,25 25,45 35,45" 
+          stroke="#66BB6A" 
+          stroke-width="2" 
+          fill="none"/>
+    <!-- Highlight -->
+    <path d="M25,5 C30,10 35,15 35,20" 
+          stroke="rgba(255,255,255,0.5)" 
+          stroke-width="3" 
+          fill="none"/>
+</svg>

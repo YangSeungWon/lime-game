@@ -8,51 +8,56 @@ export default class GameScene extends Phaser.Scene {
         this.timeLeft = this.initialTime;
         this.lastUpdateTime = 0;
         this.isSelecting = false;
-        this.selectionRect = null;  // 선택 사각형
-        this.dragStart = null;      // 드래그 시작 위치
+        this.selectionRect = null;
+        this.dragStart = null;
         this.timeBar = null;
+        this.comboCount = 0;
+        this.comboTimer = null;
+        this.comboText = null;
     }
 
     create() {
-        // 게임 영역 계산
+        // Calculate game area dimensions
         this.calculateGameArea();
 
-        // 게임 배경 설정
-        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xe0f7df).setOrigin(0);
+        // Create background with pattern
+        this.createBackground();
 
-        // 그리드 생성
+        // Create grid of limes
         this.createGrid();
 
-        // UI 생성
+        // Create UI elements
         this.createUI();
 
-        // 입력 이벤트 설정
+        // Setup input events
         this.setupInputEvents();
 
-        // 초기 시작 시간 저장
+        // Store initial start time
         this.lastUpdateTime = this.game.getTime();
+
+        // Add tutorial hint
+        this.showTutorialHint();
     }
 
     calculateGameArea() {
         const width = this.scale.width;
         const height = this.scale.height;
 
-        // 오른쪽에 타이머 영역 확보
-        const timerWidth = width * 0.15; // 전체 너비의 15%를 타이머 영역으로
-        const playWidth = width - timerWidth; // 실제 게임 영역 너비
+        // Reserve space for timer area on the right
+        const timerWidth = width * 0.15;
+        const playWidth = width - timerWidth;
+        const padding = width * 0.03;
 
-        const padding = width * 0.03; // 3% 패딩
-
-        // 게임 영역 계산 (타이머 영역을 제외한 나머지)
+        // Game area calculation (excluding timer area)
         this.gameArea = {
             x: padding,
             y: height * 0.15,
             width: playWidth - (padding * 2),
-            height: height,
+            height: height * 0.8,
             cellSize: 0
         };
 
-        // 타이머 영역 계산
+        // Timer area calculation
         this.timerArea = {
             x: playWidth,
             y: 0,
@@ -60,17 +65,54 @@ export default class GameScene extends Phaser.Scene {
             height: height
         };
 
-        // 셀 크기 계산 (17x10 그리드 기준)
+        // Calculate cell size for 17x10 grid
         const cellWidth = this.gameArea.width / 17;
         const cellHeight = this.gameArea.height / 10;
         this.gameArea.cellSize = Math.min(cellWidth, cellHeight);
+    }
+
+    createBackground() {
+        // Main background
+        this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0xe8f5e9).setOrigin(0);
+        
+        // Create subtle pattern
+        const pattern = this.add.graphics();
+        pattern.fillStyle(0xc8e6c9, 0.3);
+        
+        for (let x = 0; x < this.scale.width; x += 40) {
+            for (let y = 0; y < this.scale.height; y += 40) {
+                if ((x + y) % 80 === 0) {
+                    pattern.fillCircle(x, y, 5);
+                }
+            }
+        }
+        
+        // Add decorative elements
+        for (let i = 0; i < 5; i++) {
+            const x = Phaser.Math.Between(0, this.scale.width);
+            const y = Phaser.Math.Between(0, this.scale.height);
+            const size = Phaser.Math.Between(100, 200);
+            
+            const decoration = this.add.circle(x, y, size, 0xa5d6a7, 0.1);
+            this.tweens.add({
+                targets: decoration,
+                scale: 1.2,
+                duration: Phaser.Math.Between(3000, 6000),
+                yoyo: true,
+                repeat: -1,
+                ease: 'Sine.easeInOut'
+            });
+        }
     }
 
     createGrid() {
         const startX = this.gameArea.x;
         const startY = this.gameArea.y;
         const cellSize = this.gameArea.cellSize;
-        const limeRadius = cellSize * 0.35; // 라임 크기 약간 축소
+        const limeRadius = cellSize * 0.38;
+
+        // Create grid container for better organization
+        this.gridContainer = this.add.container(0, 0);
 
         for (let row = 0; row < 10; row++) {
             this.limes[row] = [];
@@ -78,146 +120,209 @@ export default class GameScene extends Phaser.Scene {
                 const x = startX + (col * cellSize) + (cellSize / 2);
                 const y = startY + (row * cellSize) + (cellSize / 2);
 
-                // 라임 그래픽 품질 개선
-                const lime = this.add.circle(x, y, limeRadius, 0x32CD32);
-                lime.setStrokeStyle(1, 0x28A228); // 테두리 추가
-
+                // Create lime with improved visuals
+                const limeGroup = this.add.container(x, y);
+                
+                // Shadow for depth
+                const shadow = this.add.circle(2, 2, limeRadius, 0x000000, 0.2);
+                
+                // Main lime circle
+                const lime = this.add.circle(0, 0, limeRadius, 0x7cb342);
+                lime.setStrokeStyle(2, 0x558b2f);
+                
+                // Highlight effect
+                const highlight = this.add.circle(-limeRadius * 0.3, -limeRadius * 0.3, limeRadius * 0.25, 0xffffff, 0.3);
+                
+                // Number text with improved styling
                 const number = Phaser.Math.Between(1, 9);
-
-                // 텍스트 품질 개선
-                const text = this.add.text(x, y, number.toString(), {
+                const text = this.add.text(0, 0, number.toString(), {
                     fontSize: `${limeRadius * 1.2}px`,
                     color: '#ffffff',
-                    fontFamily: 'Arial',
+                    fontFamily: 'Arial, sans-serif',
                     fontStyle: 'bold',
-                    resolution: 2 // 텍스트 선명도 향상
+                    resolution: 2
                 }).setOrigin(0.5);
-
-                // 그림자 효과 추가
-                text.setShadow(1, 1, 'rgba(0,0,0,0.3)', 2);
-
-                lime.setInteractive();
+                
+                // Add shadow to text
+                text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
+                
+                // Add all elements to the lime group
+                limeGroup.add([shadow, lime, highlight, text]);
+                
+                // Make interactive
+                lime.setInteractive({ useHandCursor: true });
+                lime.input.hitArea.setTo(-limeRadius, -limeRadius, limeRadius * 2, limeRadius * 2);
+                
+                // Store data with the lime
                 lime.setData({
                     number: number,
                     text: text,
+                    group: limeGroup,
                     row: row,
                     col: col,
                     isSelected: false
                 });
-
-                // 기본 depth 설정
-                lime.setDepth(1);
-                text.setDepth(2);
-
+                
+                // Add to grid container
+                this.gridContainer.add(limeGroup);
                 this.limes[row][col] = lime;
+                
+                // Add subtle idle animation
+                this.tweens.add({
+                    targets: limeGroup,
+                    y: y + Phaser.Math.Between(-2, 2),
+                    duration: Phaser.Math.Between(2000, 4000),
+                    yoyo: true,
+                    repeat: -1,
+                    ease: 'Sine.easeInOut',
+                    delay: Phaser.Math.Between(0, 1000)
+                });
             }
         }
     }
 
     createUI() {
-        // 점수 표시 (게임 영역 안에만 표시)
+        // Create UI container
+        this.uiContainer = this.add.container(0, 0);
+        
+        // Score display with improved styling
+        const scorePanel = this.add.rectangle(
+            this.gameArea.x, 
+            this.gameArea.y * 0.4, 
+            this.gameArea.width * 0.2, 
+            this.gameArea.y * 0.5,
+            0xffffff,
+            0.7
+        ).setOrigin(0, 0.5).setStrokeStyle(2, 0x81c784);
+        
         this.scoreText = this.add.text(
-            this.gameArea.x,
-            this.gameArea.y * 0.4,
+            scorePanel.x + scorePanel.width / 2,
+            scorePanel.y,
             'Score: 0',
             {
                 fontSize: `${this.scale.height * 0.04}px`,
-                color: '#000000',
-                fontFamily: 'Arial',
+                color: '#2e7d32',
+                fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
                 resolution: 2
             }
-        );
-
-        // 타임바 크기와 위치 계산
-        const barWidth = this.timerArea.width * 0.35;
-        const barHeight = this.timerArea.height * 0.65;
-        const barX = this.timerArea.x + (this.timerArea.width - barWidth) / 2;
-        const barY = this.timerArea.height * 0.2;
-
-        // 타임바 설정을 객체로 저장
-        this.timeBarConfig = {
-            x: barX,
-            y: barY,
-            width: barWidth,
-            height: barHeight,
-            borderWidth: 3
-        };
-
-        // 외부 테두리 (검은색)
-        this.add.rectangle(
-            this.timeBarConfig.x - this.timeBarConfig.borderWidth,
-            this.timeBarConfig.y - this.timeBarConfig.borderWidth,
-            this.timeBarConfig.width + (this.timeBarConfig.borderWidth * 2),
-            this.timeBarConfig.height + (this.timeBarConfig.borderWidth * 2),
-            0x000000
-        ).setOrigin(0);
-        // 타임바 생성
-        const timeBarWidth = this.timerArea.width * 0.3;
-        const timeBarHeight = this.timerArea.height * 0.65;
-        const timeBarX = this.timerArea.x + (this.timerArea.width * 0.35);
-        const timeBarY = this.timerArea.height * 0.85 - timeBarHeight;
-
-        // 타임바 배경 개선
-        this.add.rectangle(
-            timeBarX - 2,
-            timeBarY - 2,
-            timeBarWidth + 4,
-            timeBarHeight + 4,
-            0xffffff,  // 흰색 테두리
-        ).setOrigin(0);
-
-        this.add.rectangle(
+        ).setOrigin(0.5);
+        
+        this.uiContainer.add([scorePanel, this.scoreText]);
+        
+        // Combo text
+        this.comboText = this.add.text(
+            this.scoreText.x,
+            this.scoreText.y + this.scoreText.height + 10,
+            '',
+            {
+                fontSize: `${this.scale.height * 0.03}px`,
+                color: '#ff6d00',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                resolution: 2
+            }
+        ).setOrigin(0.5).setAlpha(0);
+        
+        this.uiContainer.add(this.comboText);
+        
+        // Timer area with improved visuals
+        const timerPanel = this.add.rectangle(
+            this.timerArea.x + this.timerArea.width * 0.5,
+            this.timerArea.height * 0.5,
+            this.timerArea.width * 0.8,
+            this.timerArea.height * 0.9,
+            0xffffff,
+            0.2
+        ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
+        
+        this.uiContainer.add(timerPanel);
+        
+        // Timer label
+        const timerLabel = this.add.text(
+            timerPanel.x,
+            timerPanel.y - timerPanel.height * 0.4,
+            'TIME',
+            {
+                fontSize: `${this.scale.height * 0.03}px`,
+                color: '#2e7d32',
+                fontFamily: 'Arial, sans-serif',
+                fontStyle: 'bold',
+                resolution: 2
+            }
+        ).setOrigin(0.5);
+        
+        this.uiContainer.add(timerLabel);
+        
+        // Time bar container
+        const timeBarWidth = this.timerArea.width * 0.4;
+        const timeBarHeight = this.timerArea.height * 0.6;
+        const timeBarX = timerPanel.x - timeBarWidth / 2;
+        const timeBarY = timerPanel.y - timeBarHeight / 2 + timerPanel.height * 0.1;
+        
+        // Time bar background
+        const timeBarBg = this.add.rectangle(
             timeBarX,
             timeBarY,
             timeBarWidth,
             timeBarHeight,
-            0x222222,  // 어두운 배경
-        ).setOrigin(0);
-
-        // 실제 타임바 (그라데이션 효과를 위해 여러 개의 바 생성)
+            0x424242,
+            0.8
+        ).setOrigin(0, 0).setStrokeStyle(3, 0xffffff);
+        
+        this.uiContainer.add(timeBarBg);
+        
+        // Actual time bar
         this.timeBar = this.add.rectangle(
             timeBarX,
             timeBarY + timeBarHeight,
             timeBarWidth,
             timeBarHeight,
-            0x00ff00
+            0x4caf50
         ).setOrigin(0, 1);
-
-        // 타임바 하이라이트 효과
+        
+        this.uiContainer.add(this.timeBar);
+        
+        // Time bar highlight
         this.timeBarHighlight = this.add.rectangle(
-            timeBarX + 2,
+            timeBarX + timeBarWidth * 0.7,
             timeBarY + timeBarHeight,
             timeBarWidth * 0.3,
             timeBarHeight,
             0xffffff
         ).setOrigin(0, 1).setAlpha(0.2);
-
-        // 시간 텍스트 개선
+        
+        this.uiContainer.add(this.timeBarHighlight);
+        
+        // Time text
         this.timeText = this.add.text(
-            timeBarX + (timeBarWidth / 2),
+            timerPanel.x,
             timeBarY + timeBarHeight + this.scale.height * 0.05,
             this.timeLeft.toString(),
             {
-                fontSize: `${this.scale.height * 0.04}px`,
-                color: '#000000',
-                fontFamily: 'Arial',
+                fontSize: `${this.scale.height * 0.05}px`,
+                color: '#2e7d32',
+                fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
                 resolution: 2
             }
         ).setOrigin(0.5);
-
-        // 타이머 영역 구분선 (시각적 구분을 위해)
-        this.add.line(
+        
+        this.uiContainer.add(this.timeText);
+        
+        // Add a divider line
+        const divider = this.add.line(
             this.timerArea.x,
             0,
             0,
             0,
             0,
             this.scale.height,
-            0x000000,
-            0.2
+            0x81c784,
+            0.5
         );
+        
+        this.uiContainer.add(divider);
     }
 
     setupInputEvents() {
@@ -225,31 +330,31 @@ export default class GameScene extends Phaser.Scene {
             this.isSelecting = true;
             this.dragStart = { x: pointer.x, y: pointer.y };
 
-            // 선택 사각형 색상을 빨간색으로 변경
+            // Create selection rectangle with improved visuals
             this.selectionRect = this.add.rectangle(
                 pointer.x,
                 pointer.y,
                 0,
                 0,
-                0xff0000,  // 빨간색으로 변경
+                0x4caf50,
                 0.3
-            ).setOrigin(0);
+            ).setOrigin(0).setStrokeStyle(2, 0x2e7d32);
         });
 
         this.input.on('pointermove', (pointer) => {
             if (this.isSelecting && this.selectionRect) {
-                // 사각형 크기 업데이트
+                // Update rectangle size
                 const width = pointer.x - this.dragStart.x;
                 const height = pointer.y - this.dragStart.y;
 
-                // 음수 값 처리를 위한 계산
+                // Handle negative values
                 const x = width < 0 ? pointer.x : this.dragStart.x;
                 const y = height < 0 ? pointer.y : this.dragStart.y;
 
                 this.selectionRect.setPosition(x, y);
                 this.selectionRect.setSize(Math.abs(width), Math.abs(height));
 
-                // 사각형 내의 라임 선택
+                // Select limes in rectangle
                 this.selectLimesInRect();
             }
         });
@@ -259,124 +364,363 @@ export default class GameScene extends Phaser.Scene {
                 this.checkSelection();
                 this.isSelecting = false;
 
-                // 선택 사각형 제거
+                // Remove selection rectangle with fade out
                 if (this.selectionRect) {
-                    this.selectionRect.destroy();
-                    this.selectionRect = null;
+                    this.tweens.add({
+                        targets: this.selectionRect,
+                        alpha: 0,
+                        duration: 200,
+                        onComplete: () => {
+                            this.selectionRect.destroy();
+                            this.selectionRect = null;
+                        }
+                    });
                 }
             }
         });
     }
 
     selectLimesInRect() {
-        // 이전 선택 초기화
+        // Reset previous selection
         this.selectedLimes.forEach(lime => {
-            lime.setFillStyle(0x32CD32);  // 기본 라임 색상으로 복구
+            const group = lime.getData('group');
+            this.tweens.add({
+                targets: group,
+                scale: 1,
+                duration: 100
+            });
+            lime.setFillStyle(0x7cb342);
             lime.setData('isSelected', false);
         });
         this.selectedLimes = [];
 
-        // 사각형 범위 계산
+        // Calculate rectangle bounds
         const bounds = this.selectionRect.getBounds();
 
-        // 모든 라임을 확인하여 사각형 안에 있는 것들 선택
+        // Check all limes and select those within the rectangle
         this.limes.forEach(row => {
             row.forEach(lime => {
-                if (lime.active && bounds.contains(lime.x, lime.y)) {
-                    lime.setFillStyle(0x228B22);  // 선택된 라임을 더 진한 초록색으로
-                    lime.setData('isSelected', true);
-                    this.selectedLimes.push(lime);
+                if (lime.active) {
+                    const group = lime.getData('group');
+                    if (bounds.contains(group.x, group.y)) {
+                        lime.setFillStyle(0x558b2f);
+                        lime.setData('isSelected', true);
+                        this.selectedLimes.push(lime);
+                        
+                        // Add selection animation
+                        this.tweens.add({
+                            targets: group,
+                            scale: 1.1,
+                            duration: 100
+                        });
+                    }
                 }
             });
         });
+        
+        // Update selection rectangle color based on sum
+        const sum = this.calculateSum();
+        if (sum === 10) {
+            this.selectionRect.setFillStyle(0x4caf50, 0.4);
+            this.selectionRect.setStrokeStyle(2, 0x2e7d32);
+        } else if (sum > 10) {
+            this.selectionRect.setFillStyle(0xf44336, 0.4);
+            this.selectionRect.setStrokeStyle(2, 0xb71c1c);
+        } else {
+            this.selectionRect.setFillStyle(0x2196f3, 0.3);
+            this.selectionRect.setStrokeStyle(2, 0x0d47a1);
+        }
+    }
+
+    calculateSum() {
+        return this.selectedLimes.reduce((total, lime) => {
+            return total + lime.getData('number');
+        }, 0);
     }
 
     checkSelection() {
-        const sum = this.selectedLimes.reduce((total, lime) => {
-            return total + lime.getData('number');
-        }, 0);
+        const sum = this.calculateSum();
 
-        if (sum === 10) {
-            // 선택 성공시 애니메이션 실행
-            this.animateSuccessfulLimes();
+        if (sum === 10 && this.selectedLimes.length > 0) {
+            // Successful selection
+            this.handleSuccessfulSelection();
         } else {
-            // 선택 실패 - 원래 색상으로 복구
+            // Failed selection - restore original appearance
             this.selectedLimes.forEach(lime => {
-                lime.setFillStyle(0x32CD32);
+                const group = lime.getData('group');
+                lime.setFillStyle(0x7cb342);
                 lime.setData('isSelected', false);
+                
+                // Add shake animation for failed selection
+                this.tweens.add({
+                    targets: group,
+                    x: group.x + 3,
+                    duration: 50,
+                    yoyo: true,
+                    repeat: 3,
+                    ease: 'Sine.easeInOut',
+                    onComplete: () => {
+                        this.tweens.add({
+                            targets: group,
+                            scale: 1,
+                            duration: 100
+                        });
+                    }
+                });
             });
+            
+            // Reset combo
+            this.resetCombo();
         }
 
         this.selectedLimes = [];
     }
 
-    animateSuccessfulLimes() {
-        const bottomY = this.scale.height + 50;
-        let completedAnimations = 0;
-        const totalLimes = this.selectedLimes.length;
-
-        this.score += totalLimes;
+    handleSuccessfulSelection() {
+        // Increase combo count
+        this.comboCount++;
+        
+        // Calculate points with combo multiplier
+        const basePoints = this.selectedLimes.length;
+        const comboMultiplier = Math.min(this.comboCount, 5);
+        const pointsEarned = basePoints * comboMultiplier;
+        
+        // Update score
+        this.score += pointsEarned;
         this.scoreText.setText('Score: ' + this.score);
-
-        this.selectedLimes.forEach((lime, index) => {
-            const startX = lime.x;
-            const startY = lime.y;
-            const text = lime.getData('text');
-
-            // 애니메이션 중인 라임을 최상위 레이어로 이동
-            lime.setDepth(1000);
-            text.setDepth(1001);  // 텍스트는 라임보다 더 위에
-
+        
+        // Show combo text
+        if (this.comboCount > 1) {
+            this.comboText.setText(`Combo x${comboMultiplier}! +${pointsEarned}`);
+            this.comboText.setAlpha(1);
+            
             this.tweens.add({
-                targets: [lime, text],
-                y: startY - 50,
-                duration: 300,
-                ease: 'Quad.easeOut',
+                targets: this.comboText,
+                scale: 1.3,
+                duration: 200,
+                yoyo: true,
                 onComplete: () => {
                     this.tweens.add({
-                        targets: [lime, text],
+                        targets: this.comboText,
+                        alpha: 0,
+                        delay: 1000,
+                        duration: 300
+                    });
+                }
+            });
+        }
+        
+        // Reset combo timer
+        if (this.comboTimer) {
+            this.comboTimer.remove();
+        }
+        
+        // Set new combo timer
+        this.comboTimer = this.time.delayedCall(3000, this.resetCombo, [], this);
+        
+        // Animate successful limes
+        this.animateSuccessfulLimes();
+        
+        // Add time bonus (1 second per lime)
+        this.lastUpdateTime -= (this.selectedLimes.length * 1000);
+    }
+
+    resetCombo() {
+        this.comboCount = 0;
+        if (this.comboTimer) {
+            this.comboTimer.remove();
+            this.comboTimer = null;
+        }
+    }
+
+    animateSuccessfulLimes() {
+        const bottomY = this.scale.height + 50;
+        
+        // Create a flash effect
+        const flash = this.add.rectangle(
+            this.scale.width / 2,
+            this.scale.height / 2,
+            this.scale.width,
+            this.scale.height,
+            0xffffff
+        ).setAlpha(0);
+        
+        this.tweens.add({
+            targets: flash,
+            alpha: 0.3,
+            duration: 100,
+            yoyo: true,
+            onComplete: () => flash.destroy()
+        });
+        
+        // Animate each selected lime
+        this.selectedLimes.forEach((lime, index) => {
+            const group = lime.getData('group');
+            const text = lime.getData('text');
+            const startX = group.x;
+            const startY = group.y;
+            
+            // Create score popup
+            const scorePopup = this.add.text(
+                startX,
+                startY,
+                '+' + lime.getData('number'),
+                {
+                    fontSize: '24px',
+                    color: '#ffffff',
+                    fontFamily: 'Arial, sans-serif',
+                    fontStyle: 'bold',
+                    stroke: '#2e7d32',
+                    strokeThickness: 4
+                }
+            ).setOrigin(0.5).setDepth(1000);
+            
+            // Animate score popup
+            this.tweens.add({
+                targets: scorePopup,
+                y: startY - 50,
+                alpha: 0,
+                duration: 800,
+                ease: 'Quad.easeOut',
+                onComplete: () => scorePopup.destroy()
+            });
+            
+            // Set lime to top layer
+            group.setDepth(100 + index);
+            
+            // First animation: bounce up
+            this.tweens.add({
+                targets: group,
+                y: startY - 50,
+                scale: 1.2,
+                duration: 300,
+                ease: 'Quad.easeOut',
+                delay: index * 50,
+                onComplete: () => {
+                    // Second animation: fall down
+                    this.tweens.add({
+                        targets: group,
                         y: bottomY,
-                        x: startX + Phaser.Math.Between(-50, 50),
+                        x: startX + Phaser.Math.Between(-100, 100),
                         angle: Phaser.Math.Between(-180, 180),
-                        scaleX: 0.5,
-                        scaleY: 0.5,
-                        duration: 500,
+                        scale: 0.5,
+                        alpha: 0,
+                        duration: 600,
                         ease: 'Quad.easeIn',
                         onComplete: () => {
-                            text.destroy();
-                            lime.destroy();
-
-                            completedAnimations++;
+                            // Remove lime and text
+                            group.destroy();
+                            
+                            // Replace with a new lime
+                            this.createNewLime(lime.getData('row'), lime.getData('col'));
                         }
                     });
                 }
             });
         });
+        
+        // Play success sound (placeholder)
+        // this.sound.play('success');
     }
 
-    // 선택 효과도 개선
-    selectLime(lime) {
-        if (!lime.getData('isSelected')) {
-            // 선택 효과 애니메이션
-            this.tweens.add({
-                targets: [lime, lime.getData('text')],
-                scaleX: 1.2,
-                scaleY: 1.2,
-                duration: 100,
-                yoyo: true,
-                ease: 'Quad.easeOut',
-                onComplete: () => {
-                    lime.setFillStyle(0x228B22);
-                }
-            });
+    createNewLime(row, col) {
+        const cellSize = this.gameArea.cellSize;
+        const limeRadius = cellSize * 0.38;
+        const x = this.gameArea.x + (col * cellSize) + (cellSize / 2);
+        const y = this.gameArea.y - cellSize; // Start above the grid
+        const targetY = this.gameArea.y + (row * cellSize) + (cellSize / 2);
+        
+        // Create new lime group
+        const limeGroup = this.add.container(x, y);
+        
+        // Shadow
+        const shadow = this.add.circle(2, 2, limeRadius, 0x000000, 0.2);
+        
+        // Main lime
+        const lime = this.add.circle(0, 0, limeRadius, 0x7cb342);
+        lime.setStrokeStyle(2, 0x558b2f);
+        
+        // Highlight
+        const highlight = this.add.circle(-limeRadius * 0.3, -limeRadius * 0.3, limeRadius * 0.25, 0xffffff, 0.3);
+        
+        // Number
+        const number = Phaser.Math.Between(1, 9);
+        const text = this.add.text(0, 0, number.toString(), {
+            fontSize: `${limeRadius * 1.2}px`,
+            color: '#ffffff',
+            fontFamily: 'Arial, sans-serif',
+            fontStyle: 'bold',
+            resolution: 2
+        }).setOrigin(0.5);
+        
+        text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
+        
+        // Add all elements to group
+        limeGroup.add([shadow, lime, highlight, text]);
+        
+        // Make interactive
+        lime.setInteractive({ useHandCursor: true });
+        lime.input.hitArea.setTo(-limeRadius, -limeRadius, limeRadius * 2, limeRadius * 2);
+        
+        // Store data
+        lime.setData({
+            number: number,
+            text: text,
+            group: limeGroup,
+            row: row,
+            col: col,
+            isSelected: false
+        });
+        
+        // Add to grid container
+        this.gridContainer.add(limeGroup);
+        this.limes[row][col] = lime;
+        
+        // Animate falling into place
+        this.tweens.add({
+            targets: limeGroup,
+            y: targetY,
+            duration: 500,
+            ease: 'Bounce.easeOut'
+        });
+    }
 
-            lime.setData('isSelected', true);
-            this.selectedLimes.push(lime);
-        }
+    showTutorialHint() {
+        // Create tutorial hint
+        const hint = this.add.container(this.scale.width / 2, this.scale.height / 2);
+        
+        // Background
+        const hintBg = this.add.rectangle(0, 0, this.scale.width * 0.6, this.scale.height * 0.3, 0x000000, 0.7)
+            .setOrigin(0.5)
+            .setRoundedRectangle(20);
+        
+        // Text
+        const hintText = this.add.text(0, 0, 
+            "Drag to select limes that sum to 10!\nMake combos for bonus points!", 
+            {
+                fontSize: '24px',
+                color: '#ffffff',
+                fontFamily: 'Arial, sans-serif',
+                align: 'center',
+                lineSpacing: 10
+            }
+        ).setOrigin(0.5);
+        
+        hint.add([hintBg, hintText]);
+        hint.setDepth(2000);
+        
+        // Animate hint
+        this.tweens.add({
+            targets: hint,
+            alpha: 0,
+            delay: 2000,
+            duration: 500,
+            onComplete: () => hint.destroy()
+        });
     }
 
     update(time, delta) {
-        // 부드러운 타임바 업데이트
+        // Smooth time bar update
         const currentTime = this.initialTime - (this.game.getTime() - this.lastUpdateTime) / 1000;
 
         if (currentTime <= 0) {
@@ -387,47 +731,63 @@ export default class GameScene extends Phaser.Scene {
 
         this.timeLeft = Math.ceil(currentTime);
 
-        // 타임바 높이 부드럽게 업데이트
+        // Update time bar height smoothly
         const progress = currentTime / this.initialTime;
-        const height = this.timerArea.height * 0.6 * progress;
+        const height = this.timeBar.height * progress;
 
-        this.timeBar.setSize(this.timerArea.width * 0.3, height);
-        this.timeBarHighlight.setSize(this.timerArea.width * 0.09, height);
+        this.timeBar.setSize(this.timeBar.width, this.timeBar.height * progress);
+        this.timeBarHighlight.setSize(this.timeBarHighlight.width, this.timeBar.height * progress);
 
-        // 색상 그라데이션 효과
-        if (progress > 0.5) {
-            this.timeBar.setFillStyle(0x00ff00);  // 초록색
-        } else if (progress > 0.2) {
-            this.timeBar.setFillStyle(0xffff00);  // 노란색
+        // Color gradient effect based on time remaining
+        if (progress > 0.6) {
+            this.timeBar.setFillStyle(0x4caf50); // Green
+        } else if (progress > 0.3) {
+            this.timeBar.setFillStyle(0xffc107); // Yellow
         } else {
-            this.timeBar.setFillStyle(0xff0000);  // 빨간색
+            this.timeBar.setFillStyle(0xf44336); // Red
+            
+            // Add pulsing effect when time is low
+            if (progress < 0.2 && Math.floor(currentTime) % 2 === 0) {
+                this.timeBar.setAlpha(0.8);
+            } else {
+                this.timeBar.setAlpha(1);
+            }
         }
 
-        // 시간 텍스트 업데이트
+        // Update time text
         if (this.timeText) {
             this.timeText.setText(Math.ceil(currentTime).toString());
+        }
+        
+        // Update selection sum display if selecting
+        if (this.isSelecting && this.selectedLimes.length > 0) {
+            const sum = this.calculateSum();
+            if (!this.sumText) {
+                this.sumText = this.add.text(
+                    this.scale.width / 2,
+                    this.scale.height * 0.1,
+                    `Sum: ${sum}/10`,
+                    {
+                        fontSize: '32px',
+                        color: sum === 10 ? '#4caf50' : '#2196f3',
+                        fontFamily: 'Arial, sans-serif',
+                        fontStyle: 'bold',
+                        stroke: '#ffffff',
+                        strokeThickness: 4
+                    }
+                ).setOrigin(0.5).setDepth(1000);
+            } else {
+                this.sumText.setText(`Sum: ${sum}/10`);
+                this.sumText.setColor(sum === 10 ? '#4caf50' : sum > 10 ? '#f44336' : '#2196f3');
+            }
+        } else if (this.sumText) {
+            this.sumText.destroy();
+            this.sumText = null;
         }
     }
 
     gameOver() {
-        const centerX = this.gameArea.x + (this.gameArea.width / 2);
-        const centerY = this.gameArea.y + (this.gameArea.height / 2);
-
-        const gameOverText = this.add.text(centerX, centerY, 'GAME OVER', {
-            fontSize: `${this.scale.height * 0.08}px`,
-            color: '#000000'
-        }).setOrigin(0.5);
-
-        const finalScore = this.add.text(
-            centerX,
-            centerY + this.scale.height * 0.1,
-            `Final Score: ${this.score}`,
-            {
-                fontSize: `${this.scale.height * 0.05}px`,
-                color: '#000000'
-            }
-        ).setOrigin(0.5);
-
-        this.input.enabled = false;
+        // Transition to game over scene
+        this.scene.start('GameOverScene', { score: this.score });
     }
-} 
+}
