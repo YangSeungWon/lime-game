@@ -14,6 +14,8 @@ export default class GameScene extends Phaser.Scene {
         this.comboCount = 0;
         this.comboTimer = null;
         this.comboText = null;
+        this.lastSelectionTime = 0;
+        this.lastSelectionString = '';
     }
 
     create() {
@@ -44,9 +46,6 @@ export default class GameScene extends Phaser.Scene {
 
         // Store initial start time
         this.lastUpdateTime = this.game.getTime();
-
-        // Add tutorial hint
-        this.showTutorialHint();
     }
 
     calculateGameArea() {
@@ -428,17 +427,29 @@ export default class GameScene extends Phaser.Scene {
             });
         });
 
-        // Update selection rectangle color based on sum
-        const sum = this.calculateSum();
-        if (sum === 10) {
-            this.selectionRect.setFillStyle(0x4caf50, 0.4);
-            this.selectionRect.setStrokeStyle(2, 0x2e7d32);
-        } else if (sum > 10) {
-            this.selectionRect.setFillStyle(0xf44336, 0.4);
-            this.selectionRect.setStrokeStyle(2, 0xb71c1c);
-        } else {
-            this.selectionRect.setFillStyle(0x2196f3, 0.3);
-            this.selectionRect.setStrokeStyle(2, 0x0d47a1);
+        // Create a string representation of current selection for comparison
+        const currentSelectionString = this.selectedLimes
+            .map(lime => `${lime.getData('row')},${lime.getData('col')}`)
+            .sort()
+            .join('|');
+
+        // Check if selection has changed
+        if (currentSelectionString !== this.lastSelectionString) {
+            this.lastSelectionString = currentSelectionString;
+            this.lastSelectionTime = this.game.getTime();
+        } else if (this.game.getTime() - this.lastSelectionTime > 100) { // 0.1초 경과
+            // Calculate and update selection rectangle color based on sum
+            const sum = this.calculateSum();
+            if (sum === 10) {
+                this.selectionRect.setFillStyle(0x4caf50, 0.4);
+                this.selectionRect.setStrokeStyle(2, 0x2e7d32);
+            } else if (sum > 10) {
+                this.selectionRect.setFillStyle(0xf44336, 0.4);
+                this.selectionRect.setStrokeStyle(2, 0xb71c1c);
+            } else {
+                this.selectionRect.setFillStyle(0x2196f3, 0.3);
+                this.selectionRect.setStrokeStyle(2, 0x0d47a1);
+            }
         }
     }
 
@@ -702,39 +713,6 @@ export default class GameScene extends Phaser.Scene {
             y: targetY,
             duration: 500,
             ease: 'Bounce.easeOut'
-        });
-    }
-
-    showTutorialHint() {
-        // Create tutorial hint
-        const hint = this.add.container(this.scale.width / 2, this.scale.height / 2);
-
-        // Background
-        const hintBg = this.add.graphics();
-        hintBg.fillStyle(0x000000, 0.7);
-
-        // Text
-        const hintText = this.add.text(0, 0,
-            "Drag to select limes that sum to 10!\nMake combos for bonus points!",
-            {
-                fontSize: '24px',
-                color: '#ffffff',
-                fontFamily: 'Arial',
-                align: 'center',
-                lineSpacing: 10
-            }
-        ).setOrigin(0.5);
-
-        hint.add([hintBg, hintText]);
-        hint.setDepth(2000);
-
-        // Animate hint
-        this.tweens.add({
-            targets: hint,
-            alpha: 0,
-            delay: 2000,
-            duration: 500,
-            onComplete: () => hint.destroy()
         });
     }
 
