@@ -175,17 +175,6 @@ class GameScene extends Phaser.Scene {
                 // Add to grid container
                 this.gridContainer.add(limeGroup);
                 this.limes[row][col] = lime;
-
-                // Add subtle idle animation
-                this.tweens.add({
-                    targets: limeGroup,
-                    y: y + Phaser.Math.Between(-2, 2),
-                    duration: Phaser.Math.Between(2000, 4000),
-                    yoyo: true,
-                    repeat: -1,
-                    ease: 'Sine.easeInOut',
-                    delay: Phaser.Math.Between(0, 1000)
-                });
             }
         }
     }
