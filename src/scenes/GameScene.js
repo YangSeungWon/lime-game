@@ -70,33 +70,54 @@ class GameScene extends Phaser.Scene {
     calculateGameArea() {
         const width = this.scale.width;
         const height = this.scale.height;
-
-        // Reserve space for timer area on the right
-        const timerWidth = width * 0.15;
-        const playWidth = width - timerWidth;
         const padding = width * 0.03;
 
-        // Game area calculation (excluding timer area)
-        this.gameArea = {
-            x: padding,
-            y: height * 0.15,
-            width: playWidth - (padding * 2),
-            height: height * 0.8,
-            cellSize: 0
-        };
+        // Check if screen is portrait (height > width)
+        const isPortrait = height > width;
 
         // Timer area calculation
+        const timerHeight = height * 0.1; // 10% of screen height for timer
         this.timerArea = {
-            x: playWidth,
+            x: 0,
             y: 0,
-            width: timerWidth,
-            height: height
+            width: width,
+            height: timerHeight
         };
 
-        // Calculate cell size for 17x10 grid
-        const cellWidth = this.gameArea.width / 17;
-        const cellHeight = this.gameArea.height / 10;
-        this.gameArea.cellSize = Math.min(cellWidth, cellHeight);
+        // Calculate available space for the grid
+        const availableWidth = width - (padding * 2);
+        const availableHeight = height - timerHeight - (padding * 2);
+
+        // Calculate cell size based on orientation
+        let cellSize;
+        if (isPortrait) {
+            // Portrait: 17x10 grid
+            const cellWidth = availableWidth / 10;
+            const cellHeight = availableHeight / 17;
+            cellSize = Math.min(cellWidth, cellHeight);
+        } else {
+            // Landscape: 10x17 grid
+            const cellWidth = availableWidth / 17;
+            const cellHeight = availableHeight / 10;
+            cellSize = Math.min(cellWidth, cellHeight);
+        }
+
+        // Calculate actual grid dimensions
+        const cols = isPortrait ? 10 : 17;
+        const rows = isPortrait ? 17 : 10;
+        const actualGridWidth = cellSize * cols;
+        const actualGridHeight = cellSize * rows;
+
+        // Center the grid horizontally and vertically
+        this.gameArea = {
+            x: (width - actualGridWidth) / 2,
+            y: timerHeight + ((height - timerHeight - actualGridHeight) / 2),
+            width: actualGridWidth,
+            height: actualGridHeight,
+            cellSize: cellSize
+        };
+
+        this.gridDimensions = { rows, cols };
     }
 
     createBackground() {
@@ -138,13 +159,21 @@ class GameScene extends Phaser.Scene {
         const startY = this.gameArea.y;
         const cellSize = this.gameArea.cellSize;
         const limeRadius = cellSize * 0.38;
+        const { rows, cols } = this.gridDimensions;
 
         // Create grid container for better organization
         this.gridContainer = this.add.container(0, 0);
 
-        for (let row = 0; row < 10; row++) {
-            this.limes[row] = [];
-            for (let col = 0; col < 17; col++) {
+        // Initialize limes array with correct dimensions
+        this.limes = new Array(rows);
+        for (let i = 0; i < rows; i++) {
+            this.limes[i] = new Array(cols).fill(null);
+        }
+
+        console.log('Initialized limes array:', rows, 'x', cols);
+
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
                 const x = startX + (col * cellSize) + (cellSize / 2);
                 const y = startY + (row * cellSize) + (cellSize / 2);
 
@@ -204,20 +233,20 @@ class GameScene extends Phaser.Scene {
 
         // Score display with improved styling
         const scorePanel = this.add.rectangle(
-            this.gameArea.x,
-            this.gameArea.y * 0.4,
-            this.gameArea.width * 0.2,
-            this.gameArea.y * 0.5,
+            this.scale.width * 0.15,
+            this.timerArea.height / 2,
+            this.scale.width * 0.2,
+            this.timerArea.height * 0.8,
             0xffffff,
             0.7
-        ).setOrigin(0, 0.5).setStrokeStyle(2, 0x81c784);
+        ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
 
         this.scoreText = this.add.text(
-            scorePanel.x + scorePanel.width / 2,
+            scorePanel.x,
             scorePanel.y,
             'Score: 0',
             {
-                fontSize: `${this.scale.height * 0.04}px`,
+                fontSize: `${this.scale.height * 0.03}px`,
                 color: '#2e7d32',
                 fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
@@ -229,9 +258,9 @@ class GameScene extends Phaser.Scene {
 
         // Timer area with improved visuals
         const timerPanel = this.add.rectangle(
-            this.timerArea.x + this.timerArea.width * 0.5,
-            this.timerArea.height * 0.5,
-            this.timerArea.width * 0.8,
+            this.scale.width * 0.5,
+            this.timerArea.height / 2,
+            this.scale.width * 0.4,
             this.timerArea.height * 0.8,
             0xffffff,
             0.2
@@ -241,11 +270,11 @@ class GameScene extends Phaser.Scene {
 
         // Timer label
         const timerLabel = this.add.text(
-            timerPanel.x,
-            timerPanel.y - timerPanel.height * 0.4,
+            timerPanel.x - timerPanel.width * 0.2,
+            timerPanel.y,
             'TIME',
             {
-                fontSize: `${this.scale.height * 0.03}px`,
+                fontSize: `${this.scale.height * 0.025}px`,
                 color: '#2e7d32',
                 fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
@@ -256,9 +285,9 @@ class GameScene extends Phaser.Scene {
         this.uiContainer.add(timerLabel);
 
         // Time bar container
-        const timeBarWidth = this.timerArea.width * 0.4;
-        const timeBarHeight = this.timerArea.height * 0.6;
-        const timeBarX = timerPanel.x - timeBarWidth / 2;
+        const timeBarWidth = timerPanel.width * 0.4;
+        const timeBarHeight = timerPanel.height * 0.6;
+        const timeBarX = timerPanel.x + timeBarWidth * 0.1;
         const timeBarY = timerPanel.y - timeBarHeight / 2;
 
         // Time bar background
@@ -276,32 +305,32 @@ class GameScene extends Phaser.Scene {
         // Actual time bar
         this.timeBar = this.add.rectangle(
             timeBarX,
-            timeBarY + timeBarHeight,
+            timeBarY,
             timeBarWidth,
             timeBarHeight,
             0x4caf50
-        ).setOrigin(0, 1);
+        ).setOrigin(0, 0);
 
         this.uiContainer.add(this.timeBar);
 
         // Time bar highlight
         this.timeBarHighlight = this.add.rectangle(
             timeBarX + timeBarWidth * 0.7,
-            timeBarY + timeBarHeight,
+            timeBarY,
             timeBarWidth * 0.3,
             timeBarHeight,
             0xffffff
-        ).setOrigin(0, 1).setAlpha(0.2);
+        ).setOrigin(0, 0).setAlpha(0.2);
 
         this.uiContainer.add(this.timeBarHighlight);
 
         // Time text
         this.timeText = this.add.text(
-            timerPanel.x,
-            timeBarY + timeBarHeight + this.scale.height * 0.05,
+            timerPanel.x + timerPanel.width * 0.3,
+            timerPanel.y,
             this.timeLeft.toString(),
             {
-                fontSize: `${this.scale.height * 0.05}px`,
+                fontSize: `${this.scale.height * 0.03}px`,
                 color: '#2e7d32',
                 fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
@@ -310,20 +339,6 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         this.uiContainer.add(this.timeText);
-
-        // Add a divider line
-        const divider = this.add.line(
-            this.timerArea.x,
-            0,
-            0,
-            0,
-            0,
-            this.scale.height,
-            0x81c784,
-            0.5
-        );
-
-        this.uiContainer.add(divider);
     }
 
     setupInputEvents() {
@@ -605,11 +620,13 @@ class GameScene extends Phaser.Scene {
             return null;
         }
 
-        if (row < 0 || row >= 10 || !this.limes[row]) {
+        const { rows, cols } = this.gridDimensions;
+
+        if (row < 0 || row >= rows || !this.limes[row]) {
             console.error('Invalid row:', row);
             return null;
         }
-        if (col < 0 || col >= 17) {
+        if (col < 0 || col >= cols) {
             console.error('Invalid column:', col);
             return null;
         }

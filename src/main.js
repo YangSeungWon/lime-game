@@ -14,12 +14,20 @@ document.head.appendChild(metaKeywords);
 const config = {
     type: Phaser.AUTO,
     parent: 'game-container',
-    width: 1600,
-    height: 1200,
+    width: window.innerWidth,
+    height: window.innerHeight,
     scene: [TitleScene, GameScene],
     scale: {
-        mode: Phaser.Scale.FIT,
-        autoCenter: Phaser.Scale.CENTER_BOTH
+        mode: Phaser.Scale.RESIZE,
+        autoCenter: Phaser.Scale.CENTER_BOTH,
+        min: {
+            width: 375,
+            height: 667
+        },
+        max: {
+            width: 1024,
+            height: 768
+        }
     }
 };
 
@@ -38,34 +46,8 @@ function debounce(func, wait) {
     };
 }
 
-// 게임 크기 계산 함수
-function calculateGameSize() {
-    const maxWidth = 1600;
-    const maxHeight = 1200;
-    const windowRatio = window.innerWidth / window.innerHeight;
-    const gameRatio = maxWidth / maxHeight;
-
-    let newWidth, newHeight;
-
-    if (windowRatio < gameRatio) {
-        newWidth = window.innerWidth;
-        newHeight = window.innerWidth / gameRatio;
-    } else {
-        newHeight = window.innerHeight;
-        newWidth = window.innerHeight * gameRatio;
-    }
-
-    return {
-        width: Math.min(newWidth, maxWidth),
-        height: Math.min(newHeight, maxHeight)
-    };
-}
-
-// 리사이즈 핸들러 개선
+// 리사이즈 핸들러 단순화
 const handleResize = debounce(() => {
-    const newSize = calculateGameSize();
-    game.scale.resize(newSize.width, newSize.height);
-
     // 게임이 실행 중인 경우에만 재계산
     if (game.scene.scenes.length > 0) {
         const currentScene = game.scene.getScenes(true)[0];
