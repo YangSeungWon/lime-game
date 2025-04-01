@@ -11,9 +11,6 @@ class GameScene extends Phaser.Scene {
         this.selectionRect = null;
         this.dragStart = null;
         this.timeBar = null;
-        this.comboCount = 0;
-        this.comboTimer = null;
-        this.comboText = null;
         this.lastSelectionTime = 0;
         this.lastSelectionString = '';
     }
@@ -208,28 +205,12 @@ class GameScene extends Phaser.Scene {
 
         this.uiContainer.add([scorePanel, this.scoreText]);
 
-        // Combo text
-        this.comboText = this.add.text(
-            this.scoreText.x,
-            this.scoreText.y + this.scoreText.height + 10,
-            '',
-            {
-                fontSize: `${this.scale.height * 0.03}px`,
-                color: '#ff6d00',
-                fontFamily: 'Arial, sans-serif',
-                fontStyle: 'bold',
-                resolution: 2
-            }
-        ).setOrigin(0.5).setAlpha(0);
-
-        this.uiContainer.add(this.comboText);
-
         // Timer area with improved visuals
         const timerPanel = this.add.rectangle(
             this.timerArea.x + this.timerArea.width * 0.5,
             this.timerArea.height * 0.5,
             this.timerArea.width * 0.8,
-            this.timerArea.height * 0.9,
+            this.timerArea.height * 0.8,
             0xffffff,
             0.2
         ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
@@ -256,7 +237,7 @@ class GameScene extends Phaser.Scene {
         const timeBarWidth = this.timerArea.width * 0.4;
         const timeBarHeight = this.timerArea.height * 0.6;
         const timeBarX = timerPanel.x - timeBarWidth / 2;
-        const timeBarY = timerPanel.y - timeBarHeight / 2 + timerPanel.height * 0.1;
+        const timeBarY = timerPanel.y - timeBarHeight / 2;
 
         // Time bar background
         const timeBarBg = this.add.rectangle(
@@ -488,69 +469,24 @@ class GameScene extends Phaser.Scene {
                     }
                 });
             });
-
-            // Reset combo
-            this.resetCombo();
         }
 
         this.selectedLimes = [];
     }
 
     handleSuccessfulSelection() {
-        // Increase combo count
-        this.comboCount++;
+        // 기본 점수 계산
+        const pointsEarned = this.selectedLimes.length;
 
-        // Calculate points with combo multiplier
-        const basePoints = this.selectedLimes.length;
-        const comboMultiplier = Math.min(this.comboCount, 5);
-        const pointsEarned = basePoints * comboMultiplier;
-
-        // Update score
+        // 점수 업데이트
         this.score += pointsEarned;
         this.scoreText.setText('Score: ' + this.score);
 
-        // Show combo text
-        if (this.comboCount > 1) {
-            this.comboText.setText(`Combo x${comboMultiplier}! +${pointsEarned}`);
-            this.comboText.setAlpha(1);
-
-            this.tweens.add({
-                targets: this.comboText,
-                scale: 1.3,
-                duration: 200,
-                yoyo: true,
-                onComplete: () => {
-                    this.tweens.add({
-                        targets: this.comboText,
-                        alpha: 0,
-                        delay: 1000,
-                        duration: 300
-                    });
-                }
-            });
-        }
-
-        // Reset combo timer
-        if (this.comboTimer) {
-            this.comboTimer.remove();
-        }
-
-        // Set new combo timer
-        this.comboTimer = this.time.delayedCall(3000, this.resetCombo, [], this);
-
-        // Animate successful limes
+        // 라임 애니메이션
         this.animateSuccessfulLimes();
 
-        // Add time bonus (1 second per lime)
+        // 시간 보너스 추가
         this.lastUpdateTime -= (this.selectedLimes.length * 1000);
-    }
-
-    resetCombo() {
-        this.comboCount = 0;
-        if (this.comboTimer) {
-            this.comboTimer.remove();
-            this.comboTimer = null;
-        }
     }
 
     animateSuccessfulLimes() {
