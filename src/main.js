@@ -16,7 +16,7 @@ const config = {
     parent: 'game-container',
     width: 1600,
     height: 1200,
-    scene: [TitleScene, GameScene, GameOverScene],
+    scene: [TitleScene, GameScene],
     scale: {
         mode: Phaser.Scale.FIT,
         autoCenter: Phaser.Scale.CENTER_BOTH
