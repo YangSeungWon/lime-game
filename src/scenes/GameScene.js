@@ -16,9 +16,28 @@ class GameScene extends Phaser.Scene {
         this.isGameOver = false;
         this.gameOverPanel = null;
         this.darkOverlay = null;
+        this.bgMusic = null;
+    }
+
+    preload() {
+        // Load audio files
+        this.load.audio('bgm', 'assets/audio/bgm.ogg');
+        this.load.audio('pop', 'assets/audio/pop.ogg');
+        this.load.audio('success', 'assets/audio/success.ogg');
     }
 
     create() {
+        // Play background music
+        this.bgMusic = this.sound.add('bgm', {
+            volume: 0.4,
+            loop: true
+        });
+        this.bgMusic.play();
+
+        // Add sound effects
+        this.popSound = this.sound.add('pop', { volume: 0.6 });
+        this.successSound = this.sound.add('success', { volume: 0.7 });
+
         // 17x10 크기의 2차원 배열 초기화
         const ROWS = 17;
         const COLS = 10;
@@ -478,6 +497,9 @@ class GameScene extends Phaser.Scene {
     }
 
     handleSuccessfulSelection() {
+        // Play success sound
+        this.popSound.play();
+
         // 기본 점수 계산
         const pointsEarned = this.selectedLimes.length;
 
@@ -574,9 +596,6 @@ class GameScene extends Phaser.Scene {
                 }
             });
         });
-
-        // Play success sound (placeholder)
-        // this.sound.play('success');
     }
 
     createNewLime(row, col) {
@@ -727,6 +746,14 @@ class GameScene extends Phaser.Scene {
     gameOver() {
         if (this.isGameOver) return;
         this.isGameOver = true;
+
+        // Stop background music
+        if (this.bgMusic) {
+            this.bgMusic.stop();
+        }
+
+        // Play success sound
+        this.successSound.play();
 
         // 기존 요소들 제거
         if (this.gameOverPanel) this.gameOverPanel.destroy();
