@@ -487,9 +487,6 @@ class GameScene extends Phaser.Scene {
 
         // 라임 애니메이션
         this.animateSuccessfulLimes();
-
-        // 시간 보너스 추가
-        this.lastUpdateTime -= (this.selectedLimes.length * 1000);
     }
 
     animateSuccessfulLimes() {
@@ -728,22 +725,14 @@ class GameScene extends Phaser.Scene {
     }
 
     gameOver() {
-        // 이미 게임오버 상태면 리턴
         if (this.isGameOver) return;
         this.isGameOver = true;
 
-        // 게임 인터랙션 비활성화
-        this.input.enabled = false;
+        // 기존 요소들 제거
+        if (this.gameOverPanel) this.gameOverPanel.destroy();
+        if (this.darkOverlay) this.darkOverlay.destroy();
 
-        // 기존에 존재할 수 있는 게임오버 관련 요소들 제거
-        if (this.gameOverPanel) {
-            this.gameOverPanel.destroy();
-        }
-        if (this.darkOverlay) {
-            this.darkOverlay.destroy();
-        }
-
-        // 배경을 어둡게 처리
+        // 어두운 오버레이
         this.darkOverlay = this.add.rectangle(0, 0, this.scale.width, this.scale.height, 0x000000)
             .setOrigin(0)
             .setAlpha(0)
@@ -751,75 +740,97 @@ class GameScene extends Phaser.Scene {
 
         this.tweens.add({
             targets: this.darkOverlay,
-            alpha: 0.7,
+            alpha: 0.6,
             duration: 500
         });
 
-        // 결과 패널 생성
-        const panelWidth = this.scale.width * 0.7;
-        const panelHeight = this.scale.height * 0.6;
+        // 게임오버 패널 크기 축소
+        const panelWidth = this.scale.width * 0.4; // 0.8에서 0.4로 축소
+        const panelHeight = this.scale.height * 0.5; // 0.7에서 0.5로 축소
         this.gameOverPanel = this.add.container(this.scale.width / 2, this.scale.height / 2)
             .setDepth(999);
 
         // 패널 배경
         const panelBg = this.add.graphics();
-        panelBg.lineStyle(4, 0x81c784);
-        panelBg.fillStyle(0xffffff, 0.9);
-        panelBg.fillRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 20);
-        panelBg.strokeRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 20);
+        panelBg.fillStyle(0xffffff, 1);
+        panelBg.fillRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 16);
+        panelBg.lineStyle(2, 0x81c784);
+        panelBg.strokeRoundedRect(-panelWidth / 2, -panelHeight / 2, panelWidth, panelHeight, 16);
 
-        // Game Over 텍스트 (한 번만 생성)
-        const gameOverText = this.add.text(0, -panelHeight * 0.35, 'GAME OVER', {
-            fontSize: '64px',
+        // 트로피 아이콘 크기 축소
+        const trophyBg = this.add.circle(0, -panelHeight * 0.3, 32, 0xf1f8e9);
+        const trophy = this.add.text(0, -panelHeight * 0.3, '🏆', { fontSize: '32px' }).setOrigin(0.5);
+
+        this.tweens.add({
+            targets: trophy,
+            angle: 360,
+            duration: 1000,
+            ease: 'Cubic.easeOut'
+        });
+
+        // Game Over 텍스트 크기 축소
+        const gameOverText = this.add.text(0, -panelHeight * 0.15, 'GAME OVER', {
+            fontSize: '32px',
             fontFamily: 'Arial, sans-serif',
-            fontStyle: 'bold',
-            color: '#2e7d32',
-            stroke: '#ffffff',
-            strokeThickness: 6
+            fontWeight: 'bold',
+            color: '#2e7d32'
         }).setOrigin(0.5);
 
-        // 점수 표시 (한 번만 생성)
-        const scoreText = this.add.text(0, 0, `FINAL SCORE\n${this.score}`, {
-            fontSize: '48px',
+        // 점수 컨테이너 크기 축소
+        const scoreContainer = this.add.container(0, 0);
+        const scoreBg = this.add.rectangle(0, 0, panelWidth * 0.8, panelHeight * 0.2, 0xf1f8e9)
+            .setOrigin(0.5);
+
+        const scoreLabel = this.add.text(0, -20, 'FINAL SCORE', {
+            fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
-            fontStyle: 'bold',
-            color: '#2e7d32',
-            align: 'center'
+            color: '#33691e'
         }).setOrigin(0.5);
 
-        // 버튼 생성
-        const buttonWidth = 180;
-        const buttonHeight = 60;
-        const buttonSpacing = 30;
+        const scoreText = this.add.text(0, 10, this.score.toString(), {
+            fontSize: '42px',
+            fontFamily: 'Arial, sans-serif',
+            fontWeight: 'bold',
+            color: '#2e7d32'
+        }).setOrigin(0.5);
 
-        // Restart 버튼
-        const restartButton = this.createGameOverButton(
-            -buttonWidth - buttonSpacing / 2,
-            panelHeight * 0.3,
-            buttonWidth,
-            buttonHeight,
+        scoreContainer.add([scoreBg, scoreLabel, scoreText]);
+
+        // 버튼 크기 축소
+        const buttonY = panelHeight * 0.25;
+        const restartButton = this.createStylizedButton(
+            -panelWidth * 0.25,
+            buttonY,
             'Restart',
+            0x2e7d32,
             () => {
+                // 버튼 클릭 시 모든 게임오버 관련 요소 제거
+                this.isGameOver = false;
+                if (this.gameOverPanel) this.gameOverPanel.destroy();
+                if (this.darkOverlay) this.darkOverlay.destroy();
                 this.scene.restart();
             }
         );
 
-        // Main Menu 버튼
-        const menuButton = this.createGameOverButton(
-            buttonWidth / 2 + buttonSpacing / 2,
-            panelHeight * 0.3,
-            buttonWidth,
-            buttonHeight,
+        const menuButton = this.createStylizedButton(
+            panelWidth * 0.25,
+            buttonY,
             'Main Menu',
+            0xffffff,
             () => {
+                // 버튼 클릭 시 모든 게임오버 관련 요소 제거
+                this.isGameOver = false;
+                if (this.gameOverPanel) this.gameOverPanel.destroy();
+                if (this.darkOverlay) this.darkOverlay.destroy();
                 this.scene.start('TitleScene');
-            }
+            },
+            true
         );
 
-        // 패널에 모든 요소 추가
-        this.gameOverPanel.add([panelBg, gameOverText, scoreText, restartButton, menuButton]);
+        // 모든 요소를 패널에 추가
+        this.gameOverPanel.add([panelBg, trophyBg, trophy, gameOverText, scoreContainer, restartButton, menuButton]);
 
-        // 패널 애니메이션
+        // 패널 등장 애니메이션
         this.gameOverPanel.setScale(0.8);
         this.gameOverPanel.setAlpha(0);
 
@@ -832,40 +843,59 @@ class GameScene extends Phaser.Scene {
         });
     }
 
-    createGameOverButton(x, y, width, height, label, callback) {
+    createStylizedButton(x, y, text, color, callback, isOutline = false) {
+        const buttonWidth = 120;
+        const buttonHeight = 40;
         const button = this.add.container(x, y);
 
-        // 버튼 배경
-        const buttonBg = this.add.graphics();
-        buttonBg.fillStyle(0x2e7d32);
-        buttonBg.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
+        // 버튼 배경을 히트영역으로 사용
+        const bg = this.add.rectangle(0, 0, buttonWidth, buttonHeight, color)
+            .setOrigin(0.5)
+            .setInteractive({ useHandCursor: true });
 
-        // 버튼 텍스트
-        const text = this.add.text(0, 0, label, {
-            fontSize: '24px',
+        if (isOutline) {
+            bg.setStrokeStyle(2, 0x2e7d32);
+            bg.setFillStyle(0xffffff);
+        }
+
+        const buttonText = this.add.text(0, 0, text, {
+            fontSize: '18px',
             fontFamily: 'Arial, sans-serif',
-            fontStyle: 'bold',
-            color: '#ffffff'
+            color: isOutline ? '#2e7d32' : '#ffffff'
         }).setOrigin(0.5);
 
-        button.add([buttonBg, text]);
+        button.add([bg, buttonText]);
 
-        // 버튼 인터랙션
-        buttonBg.setInteractive(new Phaser.Geom.Rectangle(-width / 2, -height / 2, width, height),
-            Phaser.Geom.Rectangle.Contains)
-            .on('pointerover', () => {
-                buttonBg.clear();
-                buttonBg.fillStyle(0x1b5e20);
-                buttonBg.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
-                button.setScale(1.05);
-            })
-            .on('pointerout', () => {
-                buttonBg.clear();
-                buttonBg.fillStyle(0x2e7d32);
-                buttonBg.fillRoundedRect(-width / 2, -height / 2, width, height, 15);
-                button.setScale(1);
-            })
-            .on('pointerdown', callback);
+        // 버튼 인터랙션 이벤트
+        bg.on('pointerover', () => {
+            this.tweens.add({
+                targets: button,
+                scale: 1.05,
+                duration: 100
+            });
+        });
+
+        bg.on('pointerout', () => {
+            this.tweens.add({
+                targets: button,
+                scale: 1,
+                duration: 100
+            });
+        });
+
+        // 클릭 이벤트를 명확하게 설정
+        bg.on('pointerdown', () => {
+            // 클릭 효과 추가
+            this.tweens.add({
+                targets: button,
+                scale: 0.95,
+                duration: 50,
+                yoyo: true,
+                onComplete: () => {
+                    if (callback) callback();
+                }
+            });
+        });
 
         return button;
     }
