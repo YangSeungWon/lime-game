@@ -70,16 +70,16 @@ class GameScene extends Phaser.Scene {
     calculateGameArea() {
         const width = this.scale.width;
         const height = this.scale.height;
-        const padding = width * 0.03;
+        const padding = width * 0.05;
 
         // Check if screen is portrait (height > width)
         const isPortrait = height > width;
 
         // Timer area calculation
-        const timerHeight = height * 0.1; // 10% of screen height for timer
+        const timerHeight = height * 0.08;
         this.timerArea = {
             x: 0,
-            y: 0,
+            y: padding / 2,
             width: width,
             height: timerHeight
         };
@@ -108,10 +108,10 @@ class GameScene extends Phaser.Scene {
         const actualGridWidth = cellSize * cols;
         const actualGridHeight = cellSize * rows;
 
-        // Center the grid horizontally and vertically
+        // Center the grid horizontally and vertically with additional padding
         this.gameArea = {
             x: (width - actualGridWidth) / 2,
-            y: timerHeight + ((height - timerHeight - actualGridHeight) / 2),
+            y: timerHeight + padding + ((height - timerHeight - actualGridHeight - padding * 2) / 2),
             width: actualGridWidth,
             height: actualGridHeight,
             cellSize: cellSize
@@ -229,14 +229,14 @@ class GameScene extends Phaser.Scene {
 
     createUI() {
         // Create UI container
-        this.uiContainer = this.add.container(0, 0);
+        this.uiContainer = this.add.container(0, this.timerArea.y);
 
         // Score display with improved styling
         const scorePanel = this.add.rectangle(
-            this.scale.width * 0.15,
+            this.scale.width * 0.88,
             this.timerArea.height / 2,
-            this.scale.width * 0.2,
-            this.timerArea.height * 0.8,
+            this.scale.width * 0.18,
+            this.timerArea.height * 0.7,
             0xffffff,
             0.7
         ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
@@ -246,7 +246,7 @@ class GameScene extends Phaser.Scene {
             scorePanel.y,
             'Score: 0',
             {
-                fontSize: `${this.scale.height * 0.03}px`,
+                fontSize: `${this.scale.height * 0.025}px`,
                 color: '#2e7d32',
                 fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
@@ -256,81 +256,30 @@ class GameScene extends Phaser.Scene {
 
         this.uiContainer.add([scorePanel, this.scoreText]);
 
-        // Timer area with improved visuals
-        const timerPanel = this.add.rectangle(
-            this.scale.width * 0.5,
-            this.timerArea.height / 2,
-            this.scale.width * 0.4,
-            this.timerArea.height * 0.8,
-            0xffffff,
-            0.2
-        ).setOrigin(0.5).setStrokeStyle(2, 0x81c784);
-
-        this.uiContainer.add(timerPanel);
-
-        // Timer label
-        const timerLabel = this.add.text(
-            timerPanel.x - timerPanel.width * 0.2,
-            timerPanel.y,
-            'TIME',
-            {
-                fontSize: `${this.scale.height * 0.025}px`,
-                color: '#2e7d32',
-                fontFamily: 'Arial, sans-serif',
-                fontStyle: 'bold',
-                resolution: 2
-            }
-        ).setOrigin(0.5);
-
-        this.uiContainer.add(timerLabel);
-
         // Time bar container
-        const timeBarWidth = timerPanel.width * 0.4;
-        const timeBarHeight = timerPanel.height * 0.6;
-        const timeBarX = timerPanel.x + timeBarWidth * 0.1;
-        const timeBarY = timerPanel.y - timeBarHeight / 2;
+        const timeBarHeight = this.timerArea.height * 0.7;
+        const timeBarY = (this.timerArea.height - timeBarHeight) / 2;
+        const timeTextWidth = this.scale.width * 0.10;
 
-        // Time bar background
-        const timeBarBg = this.add.rectangle(
-            timeBarX,
-            timeBarY,
-            timeBarWidth,
-            timeBarHeight,
-            0x424242,
-            0.8
-        ).setOrigin(0, 0).setStrokeStyle(3, 0xffffff);
-
-        this.uiContainer.add(timeBarBg);
-
-        // Actual time bar
-        this.timeBar = this.add.rectangle(
-            timeBarX,
-            timeBarY,
-            timeBarWidth,
-            timeBarHeight,
-            0x4caf50
+        // Time text background
+        const timeTextBg = this.add.rectangle(
+            this.scale.width * 0.02,
+            0,
+            timeTextWidth,
+            this.timerArea.height,
+            0xffffff,
+            1.0
         ).setOrigin(0, 0);
 
-        this.uiContainer.add(this.timeBar);
-
-        // Time bar highlight
-        this.timeBarHighlight = this.add.rectangle(
-            timeBarX + timeBarWidth * 0.7,
-            timeBarY,
-            timeBarWidth * 0.3,
-            timeBarHeight,
-            0xffffff
-        ).setOrigin(0, 0).setAlpha(0.2);
-
-        this.uiContainer.add(this.timeBarHighlight);
+        this.uiContainer.add(timeTextBg);
 
         // Time text
         this.timeText = this.add.text(
-            timerPanel.x + timerPanel.width * 0.3,
-            timerPanel.y,
+            timeTextBg.x + timeTextWidth / 2,
+            this.timerArea.height / 2,
             this.timeLeft.toString(),
             {
-                fontSize: `${this.scale.height * 0.03}px`,
+                fontSize: `${this.scale.height * 0.035}px`,
                 color: '#2e7d32',
                 fontFamily: 'Arial, sans-serif',
                 fontStyle: 'bold',
@@ -339,6 +288,40 @@ class GameScene extends Phaser.Scene {
         ).setOrigin(0.5);
 
         this.uiContainer.add(this.timeText);
+
+        // Time bar background
+        const timeBarBg = this.add.rectangle(
+            timeTextBg.x + timeTextWidth,
+            timeBarY,
+            this.scale.width * 0.64,
+            timeBarHeight,
+            0x424242,
+            0.2
+        ).setOrigin(0, 0);
+
+        this.uiContainer.add(timeBarBg);
+
+        // Actual time bar
+        this.timeBar = this.add.rectangle(
+            timeBarBg.x,
+            timeBarY,
+            timeBarBg.width,
+            timeBarHeight,
+            0x4caf50
+        ).setOrigin(0, 0);
+
+        this.uiContainer.add(this.timeBar);
+
+        // Time bar highlight - at the bottom 30% of the bar
+        this.timeBarHighlight = this.add.rectangle(
+            timeBarBg.x,
+            timeBarY + timeBarHeight * 0.7,
+            timeBarBg.width,
+            timeBarHeight * 0.3,
+            0xffffff
+        ).setOrigin(0, 0).setAlpha(0.2);
+
+        this.uiContainer.add(this.timeBarHighlight);
     }
 
     setupInputEvents() {
@@ -705,26 +688,31 @@ class GameScene extends Phaser.Scene {
 
         this.timeLeft = Math.ceil(currentTime);
 
-        // Update time bar height smoothly
+        // Update time bar width smoothly
         const progress = currentTime / this.initialTime;
 
         // Update time bar and highlight sizes
-        this.timeBar.setScale(1, progress);
-        this.timeBarHighlight.setScale(1, progress);
+        this.timeBar.setScale(progress, 1);
+        this.timeBarHighlight.setScale(progress, 1);
 
         // Color gradient effect based on time remaining
         if (progress > 0.6) {
             this.timeBar.setFillStyle(0x4caf50); // Green
+            this.timeText.setColor('#2e7d32');
         } else if (progress > 0.3) {
             this.timeBar.setFillStyle(0xffc107); // Yellow
+            this.timeText.setColor('#f57c00');
         } else {
             this.timeBar.setFillStyle(0xf44336); // Red
+            this.timeText.setColor('#d32f2f');
 
             // Add pulsing effect when time is low
             if (progress < 0.2 && Math.floor(currentTime) % 2 === 0) {
                 this.timeBar.setAlpha(0.8);
+                this.timeText.setAlpha(0.8);
             } else {
                 this.timeBar.setAlpha(1);
+                this.timeText.setAlpha(1);
             }
         }
 
