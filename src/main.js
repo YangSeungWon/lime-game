@@ -25,8 +25,8 @@ const config = {
             height: 667
         },
         max: {
-            width: 1024,
-            height: 768
+            width: 900,
+            height: 450
         }
     }
 };

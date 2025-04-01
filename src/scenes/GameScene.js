@@ -4,7 +4,7 @@ class GameScene extends Phaser.Scene {
         this.limes = [];
         this.selectedLimes = [];
         this.score = 0;
-        this.initialTime = 1;
+        this.initialTime = 120;
         this.timeLeft = this.initialTime;
         this.lastUpdateTime = 0;
         this.isSelecting = false;
@@ -193,15 +193,15 @@ class GameScene extends Phaser.Scene {
                 // Number text with improved styling
                 const number = Phaser.Math.Between(1, 9);
                 const text = this.add.text(0, 0, number.toString(), {
-                    fontSize: `${limeRadius * 1.2}px`,
+                    fontSize: `${limeRadius * 1.4}px`,
                     color: '#ffffff',
                     fontFamily: 'Arial, sans-serif',
                     fontStyle: 'bold',
                     resolution: 2
                 }).setOrigin(0.5);
 
-                // Add shadow to text
-                text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
+                // Add stronger shadow to text
+                text.setShadow(2, 2, 'rgba(0,0,0,0.7)', 4);
 
                 // Add all elements to the lime group
                 limeGroup.add([shadow, lime, highlight, text]);
@@ -636,14 +636,14 @@ class GameScene extends Phaser.Scene {
         // Number
         const number = Phaser.Math.Between(1, 9);
         const text = this.add.text(0, 0, number.toString(), {
-            fontSize: `${limeRadius * 1.2}px`,
+            fontSize: `${limeRadius * 1.4}px`,
             color: '#ffffff',
             fontFamily: 'Arial, sans-serif',
             fontStyle: 'bold',
             resolution: 2
         }).setOrigin(0.5);
 
-        text.setShadow(1, 1, 'rgba(0,0,0,0.5)', 3);
+        text.setShadow(2, 2, 'rgba(0,0,0,0.7)', 4);
 
         // Add all elements to group
         limeGroup.add([shadow, lime, highlight, text]);
