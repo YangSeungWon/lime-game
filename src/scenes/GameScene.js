@@ -718,7 +718,7 @@ class GameScene extends Phaser.Scene {
         const elapsedTime = (time - this.lastUpdateTime) / 1000;
         const currentTime = Math.max(0, this.initialTime - elapsedTime);
 
-        if (currentTime <= 0) {
+        if (currentTime <= 0 && !this.isGameOver) {
             this.timeLeft = 0;
             this.timeText.setText('0');
             this.gameOver();
@@ -784,6 +784,38 @@ class GameScene extends Phaser.Scene {
         } else if (this.sumText) {
             this.sumText.destroy();
             this.sumText = null;
+        }
+    }
+
+    reset() {
+        // Reset game state
+        this.score = 0;
+        this.timeLeft = this.initialTime;
+        this.lastUpdateTime = this.game.getTime();
+        this.isGameOver = false;
+        this.selectedLimes = [];
+        this.isSelecting = false;
+        this.lastSelectionTime = 0;
+        this.lastSelectionString = '';
+
+        // Reset UI
+        if (this.scoreText) {
+            this.scoreText.setText('Score: 0');
+        }
+        if (this.timeText) {
+            this.timeText.setText(this.timeLeft.toString());
+        }
+        if (this.timeBar) {
+            this.timeBar.setScale(1, 1);
+        }
+        if (this.timeBarHighlight) {
+            this.timeBarHighlight.setScale(1, 1);
+        }
+        if (this.timeBar) {
+            this.timeBar.setFillStyle(0x4caf50);
+        }
+        if (this.timeText) {
+            this.timeText.setColor('#2e7d32');
         }
     }
 
@@ -897,9 +929,7 @@ class GameScene extends Phaser.Scene {
             buttonHeight,
             0x2e7d32,
             () => {
-                this.isGameOver = false;
-                if (this.gameOverPanel) this.gameOverPanel.destroy();
-                if (this.darkOverlay) this.darkOverlay.destroy();
+                this.reset();
                 this.scene.restart();
             }
         );
