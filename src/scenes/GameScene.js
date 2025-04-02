@@ -402,8 +402,10 @@ class GameScene extends Phaser.Scene {
                         alpha: 0,
                         duration: 200,
                         onComplete: () => {
-                            this.selectionRect.destroy();
-                            this.selectionRect = null;
+                            if (this.selectionRect) {
+                                this.selectionRect.destroy();
+                                this.selectionRect = null;
+                            }
                         }
                     });
                 }
@@ -636,19 +638,19 @@ class GameScene extends Phaser.Scene {
 
     createNewLime(row, col) {
         // Validate row and column
-        if (typeof row !== 'number' || typeof col !== 'number') {
-            console.error('Invalid row or column type:', { row, col });
+        if (row === undefined || col === undefined) {
+            console.warn('Row or column is undefined, skipping lime creation');
             return null;
         }
 
         const { rows, cols } = this.gridDimensions;
 
         if (row < 0 || row >= rows || !this.limes[row]) {
-            console.error('Invalid row:', row);
+            console.warn('Invalid row:', row);
             return null;
         }
         if (col < 0 || col >= cols) {
-            console.error('Invalid column:', col);
+            console.warn('Invalid column:', col);
             return null;
         }
 
