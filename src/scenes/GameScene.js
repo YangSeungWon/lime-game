@@ -54,10 +54,12 @@ class GameScene extends Phaser.Scene {
                 volume: 0.2,
                 loop: true
             });
-            this.bgMusic.play().catch(error => {
+            try {
+                this.bgMusic.play();
+            } catch (error) {
                 console.warn('Failed to play BGM:', error);
                 this.bgmError = true;
-            });
+            }
         }
 
         // Add sound effects with error handling
@@ -527,9 +529,11 @@ class GameScene extends Phaser.Scene {
     handleSuccessfulSelection() {
         // Play success sound with error handling
         if (this.popSound && !this.popError) {
-            this.popSound.play().catch(error => {
+            try {
+                this.popSound.play();
+            } catch (error) {
                 console.warn('Failed to play pop sound:', error);
-            });
+            }
         }
 
         // 기본 점수 계산
@@ -789,16 +793,20 @@ class GameScene extends Phaser.Scene {
 
         // Stop background music with error handling
         if (this.bgMusic && !this.bgmError) {
-            this.bgMusic.stop().catch(error => {
+            try {
+                this.bgMusic.stop();
+            } catch (error) {
                 console.warn('Failed to stop BGM:', error);
-            });
+            }
         }
 
         // Play success sound with error handling
         if (this.successSound && !this.successError) {
-            this.successSound.play().catch(error => {
+            try {
+                this.successSound.play();
+            } catch (error) {
                 console.warn('Failed to play success sound:', error);
-            });
+            }
         }
 
         // 기존 요소들 제거
