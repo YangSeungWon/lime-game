@@ -17,26 +17,56 @@ class GameScene extends Phaser.Scene {
         this.gameOverPanel = null;
         this.darkOverlay = null;
         this.bgMusic = null;
+        this.bgmError = false;
+        this.popError = false;
+        this.successError = false;
     }
 
     preload() {
-        // Load audio files
-        this.load.audio('bgm', 'assets/audio/bgm.ogg');
-        this.load.audio('pop', 'assets/audio/pop.ogg');
-        this.load.audio('success', 'assets/audio/success.ogg');
+        // Load audio files with error handling
+        this.load.audio('bgm', '../assets/audio/bgm.ogg', {
+            instances: 1,
+            onError: () => {
+                console.warn('Failed to load BGM audio');
+                this.bgmError = true;
+            }
+        });
+        this.load.audio('pop', '../assets/audio/pop.ogg', {
+            instances: 1,
+            onError: () => {
+                console.warn('Failed to load pop sound');
+                this.popError = true;
+            }
+        });
+        this.load.audio('success', '../assets/audio/success.ogg', {
+            instances: 1,
+            onError: () => {
+                console.warn('Failed to load success sound');
+                this.successError = true;
+            }
+        });
     }
 
     create() {
-        // Play background music
-        this.bgMusic = this.sound.add('bgm', {
-            volume: 0.4,
-            loop: true
-        });
-        this.bgMusic.play();
+        // Play background music with error handling
+        if (!this.bgmError) {
+            this.bgMusic = this.sound.add('bgm', {
+                volume: 0.2,
+                loop: true
+            });
+            this.bgMusic.play().catch(error => {
+                console.warn('Failed to play BGM:', error);
+                this.bgmError = true;
+            });
+        }
 
-        // Add sound effects
-        this.popSound = this.sound.add('pop', { volume: 0.6 });
-        this.successSound = this.sound.add('success', { volume: 0.7 });
+        // Add sound effects with error handling
+        if (!this.popError) {
+            this.popSound = this.sound.add('pop', { volume: 0.4 });
+        }
+        if (!this.successError) {
+            this.successSound = this.sound.add('success', { volume: 0.5 });
+        }
 
         // 17x10 크기의 2차원 배열 초기화
         const ROWS = 17;
@@ -495,8 +525,12 @@ class GameScene extends Phaser.Scene {
     }
 
     handleSuccessfulSelection() {
-        // Play success sound
-        this.popSound.play();
+        // Play success sound with error handling
+        if (this.popSound && !this.popError) {
+            this.popSound.play().catch(error => {
+                console.warn('Failed to play pop sound:', error);
+            });
+        }
 
         // 기본 점수 계산
         const pointsEarned = this.selectedLimes.length;
@@ -753,13 +787,19 @@ class GameScene extends Phaser.Scene {
         if (this.isGameOver) return;
         this.isGameOver = true;
 
-        // Stop background music
-        if (this.bgMusic) {
-            this.bgMusic.stop();
+        // Stop background music with error handling
+        if (this.bgMusic && !this.bgmError) {
+            this.bgMusic.stop().catch(error => {
+                console.warn('Failed to stop BGM:', error);
+            });
         }
 
-        // Play success sound
-        this.successSound.play();
+        // Play success sound with error handling
+        if (this.successSound && !this.successError) {
+            this.successSound.play().catch(error => {
+                console.warn('Failed to play success sound:', error);
+            });
+        }
 
         // 기존 요소들 제거
         if (this.gameOverPanel) this.gameOverPanel.destroy();
