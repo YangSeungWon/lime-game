@@ -4,6 +4,8 @@ A fun stacking game where you merge falling limes to create bigger ones! Inspire
 
 ## How to Play
 
+Visit https://li.me.kr to play!
+
 1. Click or tap to drop limes
 2. Use left/right arrow keys to move the current lime
 3. Match limes of the same size to merge them
